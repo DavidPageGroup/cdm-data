@@ -25,3 +25,9 @@ have ranked them roughly by popularity of use.
   * need relational DBMS with CDM-format data
 * assemble dataset from Condor job (?)
 * remapping IDs for deidentification / compression (?)
+
+
+-----
+
+Copyright (c) 2018 DPRG CDM Data.  This is free software released under
+the MIT License.  See `LICENSE.txt` for details.

@@ -121,3 +121,9 @@ Cons:
 * query functionality can be limited, must be supplemented in host
   language (write own code to process data)
 * $$$
+
+
+-----
+
+Copyright (c) 2018 DPRG CDM Data.  This is free software released under
+the MIT License.  See `LICENSE.txt` for details.
