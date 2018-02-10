@@ -21,7 +21,15 @@ there are XZ-aware versions of common command line tools available,
 e.g. `xzcat`, `xzgrep`, `xzdiff`, etc.  Of course, there is always
 `xzcat <file> | ...`.
 
+The same goes for LZ4 support.  Just be sure to use `lz4*` tools, not
+`lz*`.  Also, there is no LZ4 support in the Python standard library.
+
 The details of the data processing are in `clean_sort_compress_data.sh`.
+
+Comparison of compression algorithms can be found at
+https://catchchallenger.first-world.info/wiki/Quick_Benchmark:_Gzip_vs_Bzip2_vs_LZMA_vs_XZ_vs_LZ4_vs_LZO
+and
+https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/.
 
 
 Formats
