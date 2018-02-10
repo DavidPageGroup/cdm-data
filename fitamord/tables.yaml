@@ -1,0 +1,203 @@
+%YAML 1.2
+---
+
+# Definition of tables for processing with
+# [`fitamord`](https://github.com/afbarnard/fitamord)
+
+# Copyright (c) 2018 DPRG CDM Data.  This is free software released
+# under the MIT License.  See `LICENSE.txt` for details.
+
+is_missing:
+  - ''
+  - '?'
+  - na
+  - nil
+  - none
+  - 'null'
+  - '*not available'
+  - '* not available'
+
+positive_label: G
+
+tables:
+
+  bupropion_periods:
+    file: bupropion_med_periods.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      subject_id: int
+      from: date(%m/%d/%y)
+      upto: date(%m/%d/%y)
+      dose: int
+      type: str
+    use: 1, 2, 3, 5
+    treat as: examples
+
+  duloxetine_periods:
+    file: duloxetine_med_periods.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      subject_id: int
+      from: date(%m/%d/%y)
+      upto: date(%m/%d/%y)
+      dose: int
+      type: str
+    use: 1, 2, 3, 5
+    treat as: examples
+
+  dx:
+    file: omop_condition_occurrence.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      condition_occurrence_id: int
+      person_id: int
+      condition_concept_id: int
+      condition_start_date: date(%m/%d/%y)
+      condition_end_date: date(%m/%d/%y)
+      condition_type_concept_id: int
+      stop_reason: str
+      provider_id: int
+      visit_occurrence_id: int
+      condition_source_value: str
+      condition_source_concept_id: int
+    id: 2
+    use: 2, 3, 4
+    treat as: events
+
+  rx:
+    file: omop_drug_exposure.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      drug_exposure_id: int
+      person_id: int
+      drug_concept_id: int
+      drug_exposure_start_date: date(%m/%d/%y)
+      drug_exposure_end_date: date(%m/%d/%y)
+      drug_type_concept_id: int
+      stop_reason: str
+      refills: int
+      quantity: float
+      days_supply: int
+      sig: str
+      route_concept_id: str
+      effective_drug_dose: float
+      dose_unit_concept_id: int
+      lot_number: str
+      provider_id: int
+      visit_occurrence_id: int
+      drug_source_value: str
+      drug_source_concept_id: int
+      route_source_value: str
+      dose_unit_source_value: str
+    id: 2
+    use: 2, 3, 4
+    treat as: events
+
+  lx:
+    file: omop_measurement.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      measurement_id: int
+      person_id: int
+      measurement_concept_id: int
+      measurement_date: date(%m/%d/%y)
+      measurement_time: time
+      measurement_type_concept_id: int
+      operator_concept_id: int
+      value_as_number: float
+      value_as_concept_id: int
+      unit_concept_id: int
+      range_low: float
+      range_high: float
+      provider_id: int
+      visit_occurrence_id: int
+      measurement_source_value: str
+      measurement_source_concept_id: int
+      unit_source_value: str
+      value_source_value: str
+    id: 2
+    use: 2, 3, 4
+    treat as: events
+
+  hx:
+    file: omop_person_full.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      person_id: int
+      gender_concept_id: int
+      year_of_birth: int
+      month_of_birth: int
+      day_of_birth: int
+      time_of_birth: time
+      race_concept_id: int
+      ethnicity_concept_id: int
+      location_id: int
+      provider_id: int
+      care_site_id: int
+      person_source_value: str
+      gender_source_value: str
+      gender_source_concept_id: int
+      race_source_value: str
+      race_source_concept_id: int
+      ethnicity_source_value: str
+      ethnicity_source_concept_id: int
+    id: 1
+    use: 1, 2, 3
+    treat as: facts
+
+  px:
+    file: omop_procedure_occurrence.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      procedure_occurrence_id: int
+      person_id: int
+      procedure_concept_id: int
+      procedure_date: date(%m/%d/%y)
+      procedure_type_concept_id: int
+      modifier_concept_id: int
+      quantity: int
+      provider_id: int
+      visit_occurrence_id: int
+      procedure_source_value: str
+      procedure_source_concept_id: int
+      qualifier_source_value: str
+    id: 2
+    use: 2, 3, 4
+    treat as: events
+
+  vx:
+    file: omop_visit_occurrence.csv.xz
+    format:
+      delimiter: ','
+      data_start_line: 2
+    columns:
+      visit_occurrence_id: int
+      person_id: int
+      visit_concept_id: int
+      visit_start_date: date(%m/%d/%y)
+      visit_start_time: time
+      visit_end_date: date(%m/%d/%y)
+      visit_end_time: time
+      visit_type_concept_id: int
+      provider_id: int
+      care_site_id: int
+      visit_source_value: str
+      visit_source_concept_id: int
+    id: 2
+    use: 2, 3, 4
+    treat as: events
+...
