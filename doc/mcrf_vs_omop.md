@@ -22,3 +22,9 @@ Clinical tables
 | NOTE_NLP                |
 | OBSERVATION             |
 | FACT_RELATIONSHIP       |
+
+-----
+
+Copyright (c) 2018 Yuriy Sverchkov.  This is free software released under
+the MIT License.  See `LICENSE.txt` for details.
+
