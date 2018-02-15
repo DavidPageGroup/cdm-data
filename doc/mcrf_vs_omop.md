@@ -26,6 +26,7 @@ Only a subset of the CDM Clinical Tables is present in the Marshfield data
 | FACT_RELATIONSHIP       |
 
 There are also discreptancies in the fields present in the tables, these are listed below by table.
+Note that CSV columns are always in all caps.
 
 ### PERSON
 
@@ -50,7 +51,31 @@ There are also discreptancies in the fields present in the tables, these are lis
 | ethnicity_source_value       | Optional, varchar(50)  | Yes
 | ethnicity_source_concept_id  | Optional, integer      | Yes
 
-Note that CSV columns are in all caps.
+### VISIT_OCCURENCE
+
+| Field                         | CDM v.5.3 Specification | Present in CSV
+|-------------------------------|-------------------------|---------------
+| visit_occurence_id            | Required, integer       | Yes
+| person_id                     | Required, integer       | Yes, as STUDY_ID
+| visit_concept_id              | Required, integer       | Yes
+| visit_start_date              | Required, date          | Yes
+| visit_start_datetime          | Optional, datetime      | No
+| VISIT_START_TIME              | Not in spec             | Yes (probably always 00:00)
+| visit_end_date                | Required, date          | Yes (almost always empty)
+| visit_end_datetime            | Optional, datetime      | No
+| VISIT_END_TIME                | Not in spec             | Yes (almost always empty)
+| visit_type_concept_id         | Required, integer       | Yes
+| provider_id                   | Optional, integer       | Yes (always 0)
+| care_site_id                  | Optional, integer       | Yes (always 0)
+| visit_source_value            | Optional, varchar(50)   | Yes (always NULL)
+| visit_source_concept_id       | Optional, integer       | Yes (empty)
+| admitting_source_value        | Optional, varchar(50)   | No
+| discharge_to_concept_id       | Optional, integer       | No
+| discharge_to_source_value     | Optional, varchar(50)   | No
+| preceding_visit_occurrence_id | Optional, integer       | No
+
+* "Probably always," "always," and "empty" mean that I didn't see any other value briefly scrolling through the data
+* "Almost always" means that I saw some other values, but they are rare.
 
 -----
 
