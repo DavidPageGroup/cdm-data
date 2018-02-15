@@ -77,6 +77,26 @@ Note that CSV columns are always in all caps.
 * "Probably always," "always," and "empty" mean that I didn't see any other value briefly scrolling through the data
 * "Almost always" means that I saw some other values, but they are rare.
 
+### PROCEDURE_OCCURENCE
+
+| Field                       | Required in CDM v5.3 | Type | Present in CSV | Description |
+|-----------------------------|-----|-------------|------------------|------------|
+| procedure_occurrence_id     | Yes | integer     | Yes              | A system-generated unique identifier for each Procedure Occurrence.|
+| person_id                   | Yes | integer     | Yes, as STUDY_ID | A foreign key identifier to the Person who is subjected to the Procedure. The demographic details of that Person are stored in the PERSON table.|
+| procedure_concept_id        | Yes | integer     | Yes              | A foreign key that refers to a standard procedure Concept identifier in the Standardized Vocabularies.|
+| procedure_date              | Yes | date        | Yes              | The date on which the Procedure was performed.|
+| procedure_datetime          | No  | datetime    | No               | The date and time on which the Procedure was performed.|
+| procedure_type_concept_id   | Yes | integer     | Yes              | A foreign key to the predefined Concept identifier in the Standardized Vocabularies reflecting the type of source data from which the procedure record is derived.|
+| modifier_concept_id         | No  | integer     | Yes (empty)      | A foreign key to a Standard Concept identifier for a modifier to the Procedure (e.g. bilateral)|
+| quantity                    | No  | integer     | Yes (empty)      | The quantity of procedures ordered or administered.|
+| provider_id                 | No  | integer     | Yes (empty)      | A foreign key to the provider in the PROVIDER table who was responsible for carrying out the procedure.|
+| visit_occurrence_id         | No  | integer     | Yes              | A foreign key to the Visit in the VISIT_OCCURRENCE table during which the Procedure was carried out.|
+| visit_detail_id             | No  | integer     | No               | A foreign key to the Visit Detail in the VISIT_DETAIL table during which the Procedure was carried out.|
+| procedure_source_value      | No  | varchar(50) | Yes              | The source code for the Procedure as it appears in the source data. This code is mapped to a standard procedure Concept in the Standardized Vocabularies and the original code is, stored here for reference. Procedure source codes are typically ICD-9-Proc, CPT-4, HCPCS or OPCS-4 codes.|
+| procedure_source_concept_id | No  | integer     | Yes              | A foreign key to a Procedure Concept that refers to the code used in the source.|
+| modifier_source_value       | No  | varchar(50) | Yes (?), as QUANTIFIER_SOURCE_VALUE (always NULL) | The source code for the qualifier as it appears in the source data.|
+
+
 -----
 
 Copyright (c) 2018 Yuriy Sverchkov.  This is free software released under
