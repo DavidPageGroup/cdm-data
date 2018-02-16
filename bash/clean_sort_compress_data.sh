@@ -43,13 +43,13 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
     # Sort and compress each file in parallel.  Sleep briefly between
     # each to hopefully avoid cluttering output.
     {
-        # Remove "NULL"s, change to Unix EOLs (delete "CR" from "CRLF";
-        # `dos2unix` doesn't work as a filter), remove uninformative
-        # times from the dates.  Then sort by patient ID.  Note that the
-        # one substitution must be repeated to handle adjacent NULLs:
-        # "...,NULL,NULL,...".
-        sed -e 's/^NULL,/,/I' -e 's/,NULL,/,,/gI' -e 's/,NULL,/,,/gI' -e 's/,NULL$/,/I' -e 's/,\* *Not *Available,/,,/gI' -e 's/\r//g' -e 's/ 12:00:00 AM//gI' ${file} | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} --key=${key} > ${dst_file}
-        sleep 1
+        # Change to Unix EOLs (delete "CR" from "CRLF"; `dos2unix`
+        # doesn't work as a filter), remove "NULL"s, remove
+        # uninformative times from the dates.  Then sort by patient ID.
+        # Note that the one substitution must be repeated to handle
+        # adjacent NULLs: "...,NULL,NULL,...".  The change to Unix EOLs
+        # has to happen before `sed` tries to match "$".
+        sed -e 's/\r//g' -e 's/^NULL,/,/gI' -e 's/,NULL,/,,/gI' -e 's/,NULL,/,,/gI' -e 's/,NULL$/,/gI' -e 's/,\* *Not *Available,/,,/gI' -e 's/ 12:00:00 AM//gI' ${file} | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} --key=${key} > ${dst_file}
         # Compress in various ways to allow for different size /
         # decompress speed trade-offs.  Do all compression in parallel.
         ${timer_cmd} xz -9 -c --threads=8 ${dst_file} > ${dst_file}.xz &
