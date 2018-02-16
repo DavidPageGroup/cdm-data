@@ -1,7 +1,7 @@
 -- Definition of tables to hold CDM vocabulary data.  See the
 -- accompanying definition of clinical tables for more information.
 
--- Copyright (c) 2018 DPRG CDM Data.  This is free software released
+-- Copyright (c) 2018 Aubrey Barnard.  This is free software released
 -- under the MIT License.  See `LICENSE.txt` for details.
 
 create table concept (

@@ -51,5 +51,5 @@ The precise formats of the files are described in `tables.yaml`.
 
 -----
 
-Copyright (c) 2018 DPRG CDM Data.  This is free software released under
+Copyright (c) 2018 Aubrey Barnard.  This is free software released under
 the MIT License.  See `LICENSE.txt` for details.
