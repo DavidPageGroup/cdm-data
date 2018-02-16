@@ -12,12 +12,12 @@ Privacy
 This repository is **PUBLIC**.  Please be careful to exclude all data
 and other information that would compromise privacy.
 
-Forbidden:
+### Forbidden ###
 
 * Data of any kind
 * Authentication information of any kind (including usernames)
 
-Avoid:
+### Avoid ###
 
 * Hostnames
 * Absolute filenames
@@ -25,13 +25,14 @@ Avoid:
 * Personally-identifying information like names of organizations or
   people or e-mail addresses
 
-Allowed:
+### Allowed ###
 
 * CDM metadata
   * Schemas
   * Concept IDs
 * Filename components without base directories
 * Other information that is already public or is general in nature
+* Mention of Marshfield Clinic Research Foundation
 
 If you are unsure about how to classify a piece of information, please
 ask.
