@@ -35,7 +35,6 @@ function log() {
 prog_name=$(basename ${0:-make_db.sqlite.sh})
 data_dir=${2:-.}
 db_file=${3:-${1}.sqlite}
-echo ${db_file}
 
 # Set up files and directories
 this_dir=$(dirname ${0})
@@ -58,7 +57,7 @@ log "Creating tables"
 sqlite3 ${db_file} < ${sql_dir}/tables_${1}.sqlite.sql
 
 # Get the names of the tables
-tbl_nms=$(grep -i 'create[[:space:]]\+table' ${sql_dir}/tables_vocab.sqlite.sql | awk '{print $3}')
+tbl_nms=$(grep -i 'create[[:space:]]\+table' ${sql_dir}/tables_${1}.sqlite.sql | awk '{print $3}')
 
 # Load the tables.  Do separate sqlite3 calls so that loading each table
 # can be timed.
