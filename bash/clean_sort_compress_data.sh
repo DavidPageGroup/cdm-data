@@ -82,7 +82,9 @@ log "Done cleaning, sorting, and compressing CSVs"
 
 log "Checking for remaining dirt"
 # Check if cleaning successful.  Analyze remaining quotes, placeholders,
-# and other dirt.
+# and other dirt.  Turn off exiting on error because `grep` returns 1
+# when it does not find a match (which is good in this case).
+set +e
 for file in $(find ${dst_dir} -maxdepth 1 -iname '*.csv'); do
     # Print lines with an odd number of double quotes.  These are the
     # lines to check for proper CSV syntax.  Using `grep` as below is
