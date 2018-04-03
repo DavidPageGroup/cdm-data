@@ -22,35 +22,35 @@ positive_label: G
 tables:
 
   bupropion_periods:
-    file: bupropion_med_periods.csv.xz
+    file: bupropion_med_periods.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
     columns:
       subject_id: int
-      from: date(%m/%d/%y)
-      upto: date(%m/%d/%y)
+      from: date(%Y-%m-%d)
+      upto: date(%Y-%m-%d)
       dose: int
       type: str
     use: 1, 2, 3, 5
     treat as: examples
 
   duloxetine_periods:
-    file: duloxetine_med_periods.csv.xz
+    file: duloxetine_med_periods.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
     columns:
       subject_id: int
-      from: date(%m/%d/%y)
-      upto: date(%m/%d/%y)
+      from: date(%Y-%m-%d)
+      upto: date(%Y-%m-%d)
       dose: int
       type: str
     use: 1, 2, 3, 5
     treat as: examples
 
   dx:
-    file: omop_condition_occurrence.csv.xz
+    file: condition_occurrence.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -58,8 +58,8 @@ tables:
       condition_occurrence_id: int
       person_id: int
       condition_concept_id: int
-      condition_start_date: date(%m/%d/%y)
-      condition_end_date: date(%m/%d/%y)
+      condition_start_date: date(%Y-%m-%d)
+      condition_end_date: date(%Y-%m-%d)
       condition_type_concept_id: int
       stop_reason: str
       provider_id: int
@@ -71,7 +71,7 @@ tables:
     treat as: events
 
   rx:
-    file: omop_drug_exposure.csv.xz
+    file: drug_exposure.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -79,8 +79,8 @@ tables:
       drug_exposure_id: int
       person_id: int
       drug_concept_id: int
-      drug_exposure_start_date: date(%m/%d/%y)
-      drug_exposure_end_date: date(%m/%d/%y)
+      drug_exposure_start_date: date(%Y-%m-%d)
+      drug_exposure_end_date: date(%Y-%m-%d)
       drug_type_concept_id: int
       stop_reason: str
       refills: int
@@ -102,7 +102,7 @@ tables:
     treat as: events
 
   lx:
-    file: omop_measurement.csv.xz
+    file: measurement.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -110,7 +110,7 @@ tables:
       measurement_id: int
       person_id: int
       measurement_concept_id: int
-      measurement_date: date(%m/%d/%y)
+      measurement_date: date(%Y-%m-%d)
       measurement_time: time
       measurement_type_concept_id: int
       operator_concept_id: int
@@ -130,7 +130,7 @@ tables:
     treat as: events
 
   hx:
-    file: omop_person_full.csv.xz
+    file: person.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -158,7 +158,7 @@ tables:
     treat as: facts
 
   px:
-    file: omop_procedure_occurrence.csv.xz
+    file: procedure_occurrence.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -166,7 +166,7 @@ tables:
       procedure_occurrence_id: int
       person_id: int
       procedure_concept_id: int
-      procedure_date: date(%m/%d/%y)
+      procedure_date: date(%Y-%m-%d)
       procedure_type_concept_id: int
       modifier_concept_id: int
       quantity: int
@@ -180,7 +180,7 @@ tables:
     treat as: events
 
   vx:
-    file: omop_visit_occurrence.csv.xz
+    file: visit_occurrence.csv.gz
     format:
       delimiter: ','
       data_start_line: 2
@@ -188,9 +188,9 @@ tables:
       visit_occurrence_id: int
       person_id: int
       visit_concept_id: int
-      visit_start_date: date(%m/%d/%y)
+      visit_start_date: date(%Y-%m-%d)
       visit_start_time: time
-      visit_end_date: date(%m/%d/%y)
+      visit_end_date: date(%Y-%m-%d)
       visit_end_time: time
       visit_type_concept_id: int
       provider_id: int
