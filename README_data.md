@@ -2,34 +2,46 @@ About this Directory and its Data
 =================================
 
 
-Limited Volume Size
--------------------
+Cooperation
+-----------
 
-The disk space of this volume is limited to 200G and it is already about
-75% full, so please use it conservatively and wisely.  I have asked for
-it to be enlarged so that we have space to collaborate, store cleaned
-data, etc.
+This volume is large but finite.  Please use it wisely and sparingly,
+especially for things that do not benefit others.  Doing so will help
+ensure that everybody is able to work with the data and that multiple
+versions of the data can be maintained as we get updates.  For example,
+you can store temporary / working data in `/scratch`, `/ua/ml-group`, or
+`/z/Comp/page`.  Just make sure to protect it with strict permissions
+(`chmod -R go-rwx`).
+
+You can communicate with others working on this data by using our
+Office365 group.  Ask me if I haven't already made you a member.
+
+If you would like to contribute content (documentation, programs, etc.),
+use our GitHub repository: https://github.com/DavidPageGroup/cdm-data.
+You can either make a pull request, ask for write access to the
+repository, or send me (small) updates by e-mail.
+
+The more we can cooperate the easier we will find working with this
+data.
+
+(By the way, if you want to see who has access to the data, the members
+of our Unix group, run `getent group | grep mcrf`.)
 
 
 Cleaned, Sorted, and Compressed Data
 ------------------------------------
 
-I have created a version of the data that is sorted by study ID and
+I have created a version of the data that is cleaned, sorted by study ID, and
 compressed.  This can make the data faster to access in many cases.  See
-`sorted_data` and `sorted_data/CONTENTS.md` in particular for more
+`clean_data` and `clean_data/CONTENTS.md` in particular for more
 information.
-
-Unfortunately, I realized that people do not have access to this data or
-the vocabulary due to group membership issues.  Thus, access to this
-data will have to wait until the volume is enlarged and I can copy
-things down.
 
 
 File Formats
 ------------
 
 The formats of the files found here are described in
-`sorted_data/CONTENTS.md` and in `tables.yaml`.
+`clean_data/CONTENTS.md` and in `tables.yaml`.
 
 
 OMOP / CDM / Athena Vocabulary
@@ -43,13 +55,19 @@ can be browsed online at http://athena.ohdsi.org/, and there is some
 background information at https://www.ohdsi.org/analytic-tools/.
 
 
+SQLite DBs
+----------
+
+The cleaned data, vocabulary, and examples are also available in
+relational database form in the directory `sqlite_dbs`.  The DB format
+is SQLite 3 (https://sqlite.org/).
+
+
 Contact
 -------
 
-If you have any questions or would like to add content to this README,
-send me (Aubrey) e-mail.  Include the content you would like to add (if
-any).  The more we can cooperate the easier we will find working with
-this data.
+If you have any questions, send e-mail to me (Aubrey) or our Office365
+group.
 
 
 -----
