@@ -67,7 +67,7 @@ tables:
       condition_source_value: str
       condition_source_concept_id: int
     id: 2
-    use: 2, 3, 4
+    use: 2, 4, 3
     treat as: events
 
   rx:
@@ -98,7 +98,7 @@ tables:
       route_source_value: str
       dose_unit_source_value: str
     id: 2
-    use: 2, 3, 4
+    use: 2, 4, 3
     treat as: events
 
   lx:
@@ -126,7 +126,7 @@ tables:
       unit_source_value: str
       value_source_value: str
     id: 2
-    use: 2, 3, 4
+    use: 2, 4, 3
     treat as: events
 
   hx:
@@ -176,7 +176,7 @@ tables:
       procedure_source_concept_id: int
       qualifier_source_value: str
     id: 2
-    use: 2, 3, 4
+    use: 2, 4, 3
     treat as: events
 
   vx:
@@ -198,6 +198,6 @@ tables:
       visit_source_value: str
       visit_source_concept_id: int
     id: 2
-    use: 2, 3, 4
+    use: 2, 4, 3
     treat as: events
 ...
