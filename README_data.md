@@ -11,7 +11,7 @@ ensure that everybody is able to work with the data and that multiple
 versions of the data can be maintained as we get updates.  For example,
 you can store temporary / working data in `/scratch`, `/ua/ml-group`, or
 `/z/Comp/page`.  Just make sure to protect it with strict permissions
-(`chmod -R go-rwx`).
+(`chmod -R go-rwx`).  Compressing your data will also help.
 
 You can communicate with others working on this data by using our
 Office365 group.  Ask me if I haven't already made you a member.
@@ -28,27 +28,37 @@ data.
 of our Unix group, run `getent group | grep mcrf`.)
 
 
+Data
+----
+
+The "raw" CDM-format data is contained in the directories named
+`omop_data.*`.  Since there are multiple versions of the data, the
+directories are tagged with the extraction date and any comment.  You
+probably want to work with the clean data rather than the raw data.
+
+
 Cleaned, Sorted, and Compressed Data
 ------------------------------------
 
-I have created a version of the data that is cleaned, sorted by study ID, and
-compressed.  This can make the data faster to access in many cases.  See
-`clean_data` and `clean_data/CONTENTS.md` in particular for more
-information.
+I have cleaned, sorted, and compressed each version of the "raw" data
+into a corresponding `clean_data.*` directory.  On a shared network
+filesystem such as ours, the compressed data can be faster to access in
+many cases.  See `clean_data.*` and `clean_data.*/CONTENTS.md` in
+particular for more information.
 
 
 File Formats
 ------------
 
 The formats of the files found here are described in
-`clean_data/CONTENTS.md` and in `tables.yaml`.
+`clean_data.*/CONTENTS.md` and in `tables.yaml`.
 
 
 OMOP / CDM / Athena Vocabulary
 ------------------------------
 
 The "vocabulary" (the names and concepts) needed to understand the codes
-in this data I have provided in the `vocab` directory.  Information
+in this data have been provided in the `vocab` directory.  Information
 about the vocabulary files can be found at
 https://github.com/OHDSI/CommonDataModel/wiki.  The vocabulary contents
 can be browsed online at http://athena.ohdsi.org/, and there is some
