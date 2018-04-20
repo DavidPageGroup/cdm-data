@@ -16,6 +16,7 @@ create index idx_cond_occur__dt on condition_occurrence (condition_start_date);
 -- drug_exposure
 create index idx_drug_exp__pt on drug_exposure (person_id);
 create index idx_drug_exp__id on drug_exposure (drug_concept_id);
+create index idx_drug_exp__type_id on drug_exposure (drug_type_concept_id); 
 create index idx_drug_exp__dt on drug_exposure (drug_exposure_start_date);
 
 -- measurement
