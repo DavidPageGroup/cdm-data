@@ -62,7 +62,7 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
         # Change to Unix EOLs (delete "CR" from "CRLF"; `dos2unix`
         # doesn't work as a filter) and clean the fields.  Then sort by
         # patient ID.
-        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk -F , -f ${script_dir}/clean_data.awk | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} --key=${key} > ${dst_file}
+        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk -F , -f ${script_dir}/clean_data.awk --re-interval | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} --key=${key} > ${dst_file}
         log "Done cleaning and sorting '${file}'"
         # Compress in various ways to allow for different size /
         # decompress speed trade-offs.  Do all compression in parallel.
