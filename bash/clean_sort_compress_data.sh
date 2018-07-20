@@ -47,7 +47,7 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
             keys="-k1,1n" # First field is study ID
             ;;
         (*)
-            keys="-k2,2n -k1,1n" # Second field is study ID
+            keys="-k2,2n -k1,1n" # Second field is study ID, first field is *_occurence_id
             ;;
     esac
     # Clean up double quotes in literal-format CSV files
