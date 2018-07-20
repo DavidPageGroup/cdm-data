@@ -1,6 +1,6 @@
 # How to clean, sort, and compress the CDM-format data
 
-# Copyright (c) 2018 Aubrey Barnard.  This is free software released
+# Copyright (c) 2018 Aubrey Barnard, Jon Badger.  This is free software released
 # under the MIT License.  See `LICENSE.txt` for details.
 
 # Exit immediately on errors
@@ -44,10 +44,10 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
     # Set which field is the study ID
     case ${basename} in
         (omop_person_full.csv|bupropion*.csv|duloxetine*.csv)
-            key=1,1n # First field is study ID
+            keys="-k1,1n" # First field is study ID
             ;;
         (*)
-            key=2,2n # Second field is study ID
+            keys="-k2,2n -k1,1n" # Second field is study ID
             ;;
     esac
     # Clean up double quotes in literal-format CSV files
@@ -61,8 +61,9 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
         log "Starting to clean and sort '${file}'"
         # Change to Unix EOLs (delete "CR" from "CRLF"; `dos2unix`
         # doesn't work as a filter) and clean the fields.  Then sort by
-        # patient ID.
-        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk -F , -f ${script_dir}/clean_data.awk --re-interval | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} --key=${key} > ${dst_file}
+        # patient ID.  For GNU Awk (GAWK) version < 4.0 --re-interval is required
+        # to accomodate regular expressions with intervals.
+        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk --re-interval  -F , -f ${script_dir}/clean_data.awk | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} ${keys} > ${dst_file}
         log "Done cleaning and sorting '${file}'"
         # Compress in various ways to allow for different size /
         # decompress speed trade-offs.  Do all compression in parallel.
