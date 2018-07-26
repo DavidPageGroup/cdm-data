@@ -44,10 +44,10 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
     # Set which field is the study ID
     case ${basename} in
         (omop_person_full.csv|bupropion*.csv|duloxetine*.csv)
-            keys="-k1,1n" # First field is study ID
+            sort_keys="--key=1,1n" # First field is study_id
             ;;
         (*)
-            keys="-k2,2n -k1,1n" # Second field is study ID, first field is *_occurence_id
+            sort_keys="--key=2,2n --key=4,4" # Second field is study_id, fourth field is *_date
             ;;
     esac
     # Clean up double quotes in literal-format CSV files
@@ -63,7 +63,7 @@ for file in $(find ${src_dir} -maxdepth 1 -iname 'omop_*.csv' -not -iname '*no_q
         # doesn't work as a filter) and clean the fields.  Then sort by
         # patient ID.  For GNU Awk (GAWK) version < 4.0 --re-interval is required
         # to accomodate regular expressions with intervals.
-        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk --re-interval  -F , -f ${script_dir}/clean_data.awk | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} ${keys} > ${dst_file}
+        ${timer_cmd} sed -e 's/\r//g' ${sub_dblqt} ${file} | ${timer_cmd} awk --re-interval  -F , -f ${script_dir}/clean_data.awk | ${timer_cmd} sort --stable --field-separator=, --buffer-size=10G --temporary-directory=${TMPDIR} ${sort_keys} > ${dst_file}
         log "Done cleaning and sorting '${file}'"
         # Compress in various ways to allow for different size /
         # decompress speed trade-offs.  Do all compression in parallel.
