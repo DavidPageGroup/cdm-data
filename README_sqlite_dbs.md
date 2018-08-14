@@ -7,15 +7,16 @@ This directory contains SQLite databases that make our clean tabular
 There are DBs for the versions of the MCRF OMOP CDM data, the CDM
 vocabulary, and examples for various classification tasks.
 
-## DB naming convention
+### DB naming convention
 
 The emr DBs are named following the convention 
 'db_name.date_of_download.additional_info.sqlite3' where db_name is
 one of 'mcrf', 'emr', 'vocab', date_of_download (YYYYMMDD) indicates the date
 MCRF csv files were downloaded, and additional_info is used to provide addional
-information about the contents of the DB file.
+information about the contents of the DB file.  Users wishing to share
+derived database files are encouraged to follow this format.
 
-## queries
+### queries
 
 The DBs can be used for interactive querying by running `sqlite3
 <db-name>`.  Note that you will have to attach
