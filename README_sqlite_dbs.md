@@ -10,11 +10,13 @@ vocabulary, and examples for various classification tasks.
 ### naming convention
 
 The emr DBs are named following the convention 
-'db_name.date_of_download.additional_info.sqlite3' where db_name is
-one of 'mcrf', 'emr', 'vocab', date_of_download (YYYYMMDD) indicates the date
-MCRF csv files were downloaded, and additional_info is used to provide addional
+'db_name.data_date.tags.sqlite3' where db_name is
+one of 'mcrf', 'emr', 'vocab', data_date (YYYYMMDD) indicates the version of 
+MCRF data based on d/l date, and tags is an extensible dotted field 
+(ex ...data_date.tag.tag.sqlite3) that can be used to provide addional
 information about the contents of the DB file.  Users wishing to share
-derived database files are encouraged to follow this format.
+derived database files are encouraged to follow this format to assist with
+data version tracking and searchability. 
 
 ### queries
 
