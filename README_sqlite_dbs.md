@@ -8,7 +8,7 @@ There are DBs for the versions of the MCRF OMOP CDM data, the CDM
 vocabulary, and examples for various classification tasks.
 
 
-queries
+Queries
 -------
 
 The DBs can be used for interactive querying by running `sqlite3
@@ -18,7 +18,7 @@ with more than one at once.  You can also use any programming language
 library or other SQL tools that you prefer.
 
 
-indexes
+Indexes
 -------
 
 The DBs have indexes on the columns that can be used for lookup.  Let me
@@ -34,7 +34,7 @@ need to be analyzed on a case-by-case basis (see
 https://sqlite.org/lang_explain.html).
 
 
-date fields
+Date fields
 -----------
 
 All the dates are in "%Y-%m-%d" format so that they are automatically
@@ -43,11 +43,11 @@ compatible with SQLite's date functions
 typical programming language libraries.
 
 
-naming convention
+DB naming convention
 -----------------
 
 The EMR DBs are named following the convention <db_name> "." <data_date>
-("."<tags>)? ".sqlite3" where db_name is one of 'mcrf', 'emr', 'vocab',
+("."<tags\>)? ".sqlite3" where db_name is one of 'mcrf', 'emr', 'vocab',
 data_date (YYYYMMDD) indicates the version of MCRF data based on
 download date, and tags is an extensible field separated with dashes.
 (ex ...<data_date>.<tag-tag>.sqlite3) that can be used to provide
