@@ -105,7 +105,7 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
     # Clean up double quotes in literal-format CSV files
     sub_dblqt=
     if [[ ${base_name} == omop_drug_exposure.csv ]]; then
-        sub_dblqt="-e 's/\"/\'\'/g'"
+        sub_dblqt="-e s/\"/''/g"
     fi
     # Sort and compress each file in parallel.  Sleep briefly between
     # each to hopefully avoid cluttering output.
