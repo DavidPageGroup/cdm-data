@@ -90,7 +90,7 @@ for file in $(find ${dst_dir} -maxdepth 1 -iname '*.csv'); do
     # Print lines with an odd number of double quotes.  These are the
     # lines to check for proper CSV syntax.  Using `grep` as below is
     # faster than `awk -F '"' '{if (((NF - 1) % 2) != 0) print}'`.
-    grep '^[^"]*"\([^"]*"[^"]*"\)*[^"]*$' ${file} > ${file}.dblqts &
+    grep -n '^[^"]*"\([^"]*"[^"]*"\)*[^"]*$' ${file} > ${file}.dblqts &
     # See if anything was missed that should have been deleted
     grep -ni 'null\|not *available' ${file} > ${file}.nulls &
     grep -n '12:00:00' ${file} > ${file}.badtimes &
