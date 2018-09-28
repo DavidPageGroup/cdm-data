@@ -45,6 +45,9 @@ chmod go= ${TMPDIR}
 src_dir=$(cd ${src_dir}; pwd)
 dst_dir=$(cd ${dst_dir}; pwd)
 
+# Make a list of all generated files
+declare -a dst_files
+
 # Time the sorting and compression
 #timer_cmd=
 timer_cmd="/usr/bin/time -v"
@@ -91,6 +94,14 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
             continue
             ;;
     esac
+    # Make sure source and destination files are different.  (Don't
+    # clobber source files!)
+    if [[ "${file}" -ef "${dst_file}" ]]; then
+        log "WARNING: Skipping processing of identical source and destination files: '${file}' -> '${dst_file}'"
+        continue
+    fi
+    # Record the destination file
+    dst_files[${#dst_files[@]}]="${dst_file}"
     # Clean up double quotes in literal-format CSV files
     sub_dblqt=
     if [[ ${base_name} == omop_drug_exposure.csv ]]; then
@@ -136,7 +147,7 @@ log "Checking for remaining dirt"
 # and other dirt.  Turn off exiting on error because `grep` returns 1
 # when it does not find a match (which is good in this case).
 set +e
-for file in $(find ${dst_dir}/ -maxdepth 1 -iname '*.csv'); do
+for file in "${dst_files[@]}"; do
     # Print lines with an odd number of double quotes.  These are the
     # lines to check for proper CSV syntax.  Using `grep` as below is
     # faster than `awk -F '"' '{if (((NF - 1) % 2) != 0) print}'`.
