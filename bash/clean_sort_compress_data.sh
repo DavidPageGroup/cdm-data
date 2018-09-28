@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Aubrey Barnard, Jon Badger.  This is free software
 # released under the MIT License.  See `LICENSE.txt` for details.
 
-# Usage: bash clean_sort_compress_data.sh <src> <dst> &> clean_sort_compress_data.$(date +'%Y%m%d-%H%M%S').log
+# Usage: bash <path-to>/clean_sort_compress_data.sh <src> <dst> &> clean_sort_compress_data.$(date +'%Y%m%d-%H%M%S').log
 
 # Exit immediately on errors
 set -e
@@ -62,17 +62,15 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
     dst_file=${dst_dir}/${dst_file} # Make full path
     # Set which field is the study ID
     case ${base_name} in
-        # Fact tables, first field is numeric ID
-        ( omop_person_full.csv \
-            | omop_care_site.csv \
+        # Fact tables.  First field is numeric ID.
+        ( omop_care_site.csv \
             | omop_death.csv \
             | omop_location.csv \
-            | bupropion*.csv \
-            | duloxetine*.csv )
+            | omop_person_full.csv )
             sort_keys="--key=1,1n"
             ;;
-        # Event tables, second field is subject ID, fourth field is
-        # event date
+        # Event tables.  Second field is subject ID, fourth field is
+        # event date.
         ( omop_condition_occurrence.csv \
             | omop_drug_exposure.csv \
             | omop_measurement.csv \
@@ -81,6 +79,13 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
             | omop_visit_occurrence.csv )
             sort_keys="--key=2,2n --key=4,4"
             ;;
+        # Example tables.  First field is subject ID, second and third
+        # fields are dates (or, for raw data, the third field is drug
+        # name, but it's ok to also sort on that).
+        ( bupropion*.csv \
+            | duloxetine*.csv )
+            sort_keys="--key=1,1n --key=2,3"
+            ;;
         (*)
             log "WARNING: Skipping processing unrecognized file: '${file}'"
             continue
@@ -88,7 +93,7 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
     esac
     # Clean up double quotes in literal-format CSV files
     sub_dblqt=
-    if [[ ${basename} == omop_drug_exposure.csv ]]; then
+    if [[ ${base_name} == omop_drug_exposure.csv ]]; then
         sub_dblqt="-e 's/\"/\'\'/g'"
     fi
     # Sort and compress each file in parallel.  Sleep briefly between
@@ -139,7 +144,7 @@ for file in $(find ${dst_dir}/ -maxdepth 1 -iname '*.csv'); do
     # See if anything was missed that should have been deleted
     grep -ni 'null\|not *available' ${file} > ${file}.nulls &
     grep -n '12:00:00' ${file} > ${file}.badtimes &
-    grep -n '[0-9]\+/[0-9]\+/[0-9]\+' ${file} > ${file}.baddates &
+    grep -n '\(,\|^\)[[:space:]]*[0-9]\+/[0-9]\+/[0-9]\+[[:space:]]*\(,\|$\)' ${file} > ${file}.baddates &
 done
 wait
 # Remove empty files (which leaves only those files with actual dirt)
