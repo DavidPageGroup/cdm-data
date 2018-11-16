@@ -211,6 +211,16 @@ def configure_sqlite3(
     run_query(db, 'pragma mmap_size = {}'.format(mmap_size))
     # Convert cache size to KiB
     run_query(db, 'pragma cache_size = -{}'.format(cache_size // 1024))
+    # Log the values
+    logger = logging.getLogger(__name__)
+    n_threads = run_query(db, 'pragma threads').fetchall()
+    if n_threads:
+        n_threads = n_threads[0][0]
+    mmap_size = run_query(db, 'pragma mmap_size').fetchall()[0][0]
+    cache_size = run_query(db, 'pragma cache_size').fetchall()[0][0]
+    logger.info('Using SQLite threads: {}'.format(n_threads))
+    logger.info('Using SQLite mmap size: {}'.format(mmap_size))
+    logger.info('Using SQLite page cache size: {}'.format(cache_size))
 
 
 def main_api(
