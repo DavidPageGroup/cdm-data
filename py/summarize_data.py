@@ -94,9 +94,21 @@ def parse_table_column_names(table_definition_text):
     return (tbl_nm, tuple(col_nms))
 
 
+def read_table_definitions(sql_filename):
+    logger = logging.getLogger(__name__)
+    logger.info('Reading table definitions from: {!r}'
+                .format(sql_filename))
+    with open(sql_filename, 'rt') as sql_lines:
+        table_definitions = [parse_table_column_names(d)
+                             for d in find_table_defs(sql_lines)]
+    logger.info('Found {} table definitions'
+                .format(len(table_definitions)))
+    return table_definitions
+
+
 def run_query(db, query, params=None):
     logging.getLogger(__name__).info(
-        'Running query:\n    {};\n  with parameters:\n    {}'
+        'Running query:\n    {}\n  with parameters:\n    {}'
         .format(query, params))
     cursor = db.cursor()
     cursor.arraysize = 1024
@@ -107,69 +119,137 @@ def run_query(db, query, params=None):
     return cursor
 
 
-def n_rows(db, tbl_nm, *args, **kwargs):
-    rows = run_query(
-        db,
-        'select count(*) from {}'.format(tbl_nm),
-    ).fetchall()
-    return rows[0][0]
+def unpack_scalars(rows):
+    if len(rows) == 1 and len(rows[0]) == 1:
+        return rows[0][0]
+    else:
+        return rows
 
 
-def n_vals(db, tbl_nm, col_nm, *args, **kwargs):
-    rows = run_query(
-        db,
-        'select count(*) from (select distinct {} from {})'
-        .format(col_nm, tbl_nm),
-    ).fetchall()
-    return rows[0][0]
+def q_n_rows(tbl_nm, *args, **kwargs):
+    return ('select count(*) from {};'.format(tbl_nm), None)
 
 
-def top_k_vals(db, tbl_nm, col_nm, top_k=10, *args, **kwargs):
-    rows = run_query(
-        db,
-        'select count(*) as count, {col} from {tbl} '
-        'group by {col} order by count desc limit ?'
-        .format(tbl=tbl_nm, col=col_nm),
-        (top_k,),
-    ).fetchall()
-    return rows
+def q_n_vals(tbl_nm, col_nm, *args, **kwargs):
+    return ('select count(*) from (select distinct {} from {});'
+            .format(col_nm, tbl_nm), None)
 
 
-def summarize_table(
-        db,
-        table_name,
-        col_names=None,
+def q_top_k_vals(tbl_nm, col_nm, top_k=10, *args, **kwargs):
+    return ('select count(*), {col} from {tbl} '
+            'group by {col} order by count(*) desc limit ?;'
+            .format(tbl=tbl_nm, col=col_nm), (top_k,))
+
+
+def generate_setup_queries(
+        n_threads=4,
+        mmap_size=(2 * 2 ** 30), # 2 GiB
+        cache_size=(4 * 2 ** 30), # 4 GiB
+):
+    yield (None, 'pragma threads = {};'.format(n_threads))
+    yield ('Using SQLite threads', 'pragma threads;')
+    yield (None, 'pragma mmap_size = {};'.format(mmap_size))
+    yield ('Using SQLite mmap size', 'pragma mmap_size;')
+    yield (None, 'pragma cache_size = -{};'.format(cache_size // 1024))
+    yield ('Using SQLite page cache size', 'pragma cache_size;')
+
+
+def generate_summary_queries(
+        table_definitions,
         tab_info=('n_rows',),
         col_info=('n_vals', 'top_k_vals'),
         top_k=10,
 ):
-    """
-    This function is susceptible to SQL injection attacks via invalid
-    table or column names.  You are responsible for sanitizing table and
-    column names.  This was implemented this way because no standard
-    Python library provides functionality for quoting SQL identifiers
-    and the `sqlite3` module does not allow parameterizing table or
-    column names.
-    """
     glbls = globals()
-    # Table summary
-    tbl_summary = collections.OrderedDict()
-    # Gather table summary information in the order requested
-    for info_nm in tab_info:
-        tbl_summary[info_nm] = glbls[info_nm](db, table_name)
-    # Columns summary
-    cols_summary = collections.OrderedDict()
-    for col_nm in col_names:
-        col_summary = collections.OrderedDict()
-        # Gather column summary information in the order requested
-        for info_nm in col_info:
-            col_summary[info_nm] = glbls[info_nm](
-                db, table_name, col_nm, top_k=top_k)
-        if col_summary:
-            cols_summary[col_nm] = col_summary
-    if cols_summary:
-        tbl_summary['columns'] = cols_summary
-    return tbl_summary
+    for tbl_nm, col_nms in table_definitions:
+        # Query table summary information in the order requested
+        for info_nm in tab_info:
+            q_nm = 'q_' + info_nm
+            yield (tbl_nm, None, info_nm, glbls[q_nm](tbl_nm))
+        for col_nm in col_nms:
+            # Query column summary information in the order requested
+            for info_nm in col_info:
+                q_nm = 'q_' + info_nm
+                yield (tbl_nm, col_nm, info_nm, glbls[q_nm](
+                    tbl_nm, col_nm, top_k=top_k))
+
+
+def print_queries(
+        setup_queries,
+        summary_queries,
+        header=None,
+        mk_log=False,
+        file=sys.stdout,
+):
+    if header is not None:
+        print(header, file=file)
+    print('\n-- Setup queries', file=file)
+    if mk_log:
+        print(".shell date +'%FT%T sqlite3: Setting up'", file=file)
+    for _, q in setup_queries:
+        print(q, file=file)
+    print('\n-- Summary queries', file=file)
+    if mk_log:
+        print(".shell date +'%FT%T sqlite3: Summarizing data'", file=file)
+    prev_tbl_nm = None
+    for q_def in summary_queries:
+        tbl_nm, col_nm, info_nm, (q, p) = q_def
+        if tbl_nm != prev_tbl_nm:
+            print('\n-- Summarizing table: {}'.format(tbl_nm),
+                  file=file)
+            if mk_log:
+                print(".shell date +'%FT%T sqlite3: Summarizing table: {}'"
+                      .format(tbl_nm), file=file)
+            prev_tbl_nm = tbl_nm
+        if p:
+            # Naïvely substitute parameters
+            q = q.replace('?', '{}').format(*p)
+        if mk_log:
+            print(".shell date +'%FT%T sqlite3: Running query: {}'"
+                  .format(q), file=file)
+        print(q, file=file)
+    if mk_log:
+        print("\n.shell date +'%FT%T sqlite3: Done'", file=file)
+
+
+def execute_queries(
+        db_filename,
+        setup_queries,
+        summary_queries,
+):
+    # Create a dictionary with 3 levels: tables, columns, and infos
+    summaries = collections.OrderedDict()
+    # Connect to the SQLite DB
+    logger = logging.getLogger(__name__)
+    logger.info('Connecting to SQLite DB: {!r}'.format(db_filename))
+    with sqlite3.connect(db_filename) as db:
+        logger.info('Running setup queries')
+        for msg, q in setup_queries:
+            rows = run_query(db, q).fetchall()
+            if msg:
+                logger.info('{}: {}'.format(msg, unpack_scalars(rows)))
+        logger.info('Running summary queries')
+        prev_tbl_nm = None
+        for q_def in summary_queries:
+            tbl_nm, col_nm, info_nm, (q, p) = q_def
+            if tbl_nm != prev_tbl_nm:
+                logger.info('Summarizing table: {}'.format(tbl_nm))
+                prev_tbl_nm = tbl_nm
+            rows = run_query(db, q, p).fetchall()
+            # Get the right part of the summaries for attaching this
+            # information.  Using `setdefault` is a very wasteful way of
+            # querying and building structure in this case, but
+            # creatingi an "ordered default dict" is too complicated.
+            summary = summaries
+            if tbl_nm:
+                summary = summary.setdefault(
+                    tbl_nm, collections.OrderedDict())
+            if col_nm:
+                summary = summary.setdefault(
+                    col_nm, collections.OrderedDict())
+            summary[info_nm] = unpack_scalars(rows)
+        logger.info('Done executing queries')
+    return summaries
 
 
 def _odict_repr(dumper, odict):
@@ -182,7 +262,8 @@ def _tuple_repr(dumper, tupl):
 yaml.add_representer(tuple, _tuple_repr)
 
 
-def print_table_summaries_as_yaml(tables_to_summaries, file=sys.stdout, **yaml_dump_kwargs):
+def print_table_summaries_as_yaml(
+        tables_to_summaries, file=sys.stdout, **yaml_dump_kwargs):
     print('%YAML 1.2\n---', file=file)
     top = {'tables': tables_to_summaries}
     yaml.dump(top, file, **yaml_dump_kwargs)
@@ -199,34 +280,13 @@ def configure_logging(level=logging.INFO, stream=sys.stderr):
     )
 
 
-def configure_sqlite3(
-        db,
-        n_threads=4,
-        mmap_size=(2 * 2 ** 30), # 2 GiB
-        cache_size=(4 * 2 ** 30), # 4 GiB
-):
-    # Unfortunately, pragmas don't work with the "?" parameter syntax,
-    # so use formatting instead
-    run_query(db, 'pragma threads = {}'.format(n_threads))
-    run_query(db, 'pragma mmap_size = {}'.format(mmap_size))
-    # Convert cache size to KiB
-    run_query(db, 'pragma cache_size = -{}'.format(cache_size // 1024))
-    # Log the values
-    logger = logging.getLogger(__name__)
-    n_threads = run_query(db, 'pragma threads').fetchall()
-    if n_threads:
-        n_threads = n_threads[0][0]
-    mmap_size = run_query(db, 'pragma mmap_size').fetchall()[0][0]
-    cache_size = run_query(db, 'pragma cache_size').fetchall()[0][0]
-    logger.info('Using SQLite threads: {}'.format(n_threads))
-    logger.info('Using SQLite mmap size: {}'.format(mmap_size))
-    logger.info('Using SQLite page cache size: {}'.format(cache_size))
-
-
 def main_api(
         # Required arguments
         sql_filename,
         db_filename,
+
+        # Mode
+        print_mode=False,
 
         # Reporting control
         top_k=10,
@@ -242,33 +302,44 @@ def main_api(
         stdout=sys.stdout,
         stderr=sys.stderr,
 ):
+    # Set `__name__` so that loggers using the typical
+    # `getLogger(__name__)` will have a meaningful name.  Hopefully this
+    # won't be a problem for anything else.
+    global __name__
+    __name__ = prog_name
     configure_logging(level=log_level, stream=stderr)
-    logger = logging.getLogger(prog_name)
+    logger = logging.getLogger(__name__)
     logger.info('Starting')
     # Read the table definitions
-    logger.info('Reading table definitions from: {!r}'
-                .format(sql_filename))
-    with open(sql_filename, 'rt') as sql_lines:
-        tables = [parse_table_column_names(d)
-                  for d in find_table_defs(sql_lines)]
-    logger.info('Found {} table definitions'.format(len(tables)))
-    # Connect to the SQLite DB
-    logger.info('Connecting to SQLite DB: {!r}'.format(db_filename))
-    with sqlite3.connect(db_filename) as db:
-        configure_sqlite3(
-            db,
-            n_threads=sqlite3_n_threads,
-            mmap_size=sqlite3_mmap_size,
-            cache_size=sqlite3_cache_size,
+    tbl_defs = read_table_definitions(sql_filename)
+    # Generate queries for all summary information
+    init_qs = list(generate_setup_queries(
+        n_threads=sqlite3_n_threads,
+        mmap_size=sqlite3_mmap_size,
+        cache_size=sqlite3_cache_size,
+    ))
+    main_qs = list(generate_summary_queries(tbl_defs, top_k=top_k))
+    # Output queries or execute them and collect the results ourselves?
+    if print_mode:
+        header = """
+-- Queries for summaring the data in the tables defined in:
+-- {!r}
+
+-- Run like:
+-- $ sqlite3 -bail -echo -header -readonly {!r} < this_script.sql
+""".strip().format(sql_filename, db_filename)
+        print_queries(
+            init_qs,
+            main_qs,
+            header=header,
+            mk_log=(log_level <= logging.INFO),
+            file=stdout,
         )
-        table_summaries = collections.OrderedDict()
-        for tbl_nm, col_nms in tables:
-            logger.info('Summarizing table: {}'.format(tbl_nm))
-            summary = summarize_table(db, tbl_nm, col_nms, top_k=top_k)
-            table_summaries[tbl_nm] = summary
-    # Print report
-    logger.info('Printing report')
-    print_table_summaries_as_yaml(table_summaries, file=stdout)
+    else:
+        table_summaries = execute_queries(db_filename, init_qs, main_qs)
+        # Print report
+        logger.info('Printing report')
+        print_table_summaries_as_yaml(table_summaries, file=stdout)
     logger.info('Done')
 
 
@@ -280,12 +351,20 @@ def main_cli(prog_name, *args):
         prog=prog_name,
         description='Summarize the data in a SQLite 3 DB',
     )
-    arg_prsr.add_argument('sql_filename')
-    arg_prsr.add_argument('db_filename')
-    arg_prsr.add_argument('--top_k', type=int, metavar='N')
-    arg_prsr.add_argument('--sqlite3_n_threads', type=int, metavar='N')
-    arg_prsr.add_argument('--sqlite3_mmap_size', type=int, metavar='SZ')
-    arg_prsr.add_argument('--sqlite3_cache_size', type=int, metavar='SZ')
+    arg_prsr.add_argument('sql_filename', metavar='SQL-FILE')
+    arg_prsr.add_argument('db_filename', metavar='DB-FILE')
+    arg_prsr.add_argument('--print', action='store_true',
+                          dest='print_mode')
+    arg_prsr.add_argument('--top-k', type=int, metavar='N',
+                          dest='top_k')
+    arg_prsr.add_argument('--sqlite3-n-threads', type=int, metavar='N',
+                          dest='sqlite3_n_threads')
+    arg_prsr.add_argument('--sqlite3-mmap-size', type=int, metavar='SZ',
+                          dest='sqlite3_mmap_size')
+    arg_prsr.add_argument('--sqlite3-cache-size', type=int, metavar='SZ',
+                          dest='sqlite3_cache_size')
+    arg_prsr.add_argument('--log-level', type=int, metavar='LVL',
+                          dest='log_level')
     # Parse arguments
     nmspc = arg_prsr.parse_args(args)
     # Convert argument parser namespace to a dictionary.  Remove unset
