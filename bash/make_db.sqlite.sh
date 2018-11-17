@@ -1,5 +1,5 @@
 # Creates and loads a SQLite DB for either (1) OMOP vocabulary data, (2)
-# CDM-format EMR data, or (3) task examples
+# CDM-format EMR data, (3) task examples, or (4) events
 
 # Copyright (c) 2018 Aubrey Barnard.  This is free software released
 # under the MIT License.  See `LICENSE.txt` for details.
@@ -11,7 +11,7 @@ set -e
 case ${1} in
     # Help or no arguments
     (-h|--help|"")
-        echo "Usage: (emr|exs|vocab) [<data-dir> [<db-file>]]" >&2
+        echo "Usage: (emr|evs|exs|vocab) [<data-dir> [<db-file>]]" >&2
         exit
         ;;
     (emr|exs)
@@ -19,6 +19,9 @@ case ${1} in
         ;;
     (vocab)
         tbl_dlim="\\t"
+        ;;
+    (evs)
+        tbl_dlim='|'
         ;;
     (*)
         echo "Unrecognized command line argument: '${1}'" >&2
