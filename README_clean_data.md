@@ -5,21 +5,21 @@ Cleaned, Sorted, and Compressed Data
 Contents
 --------
 
-The files in this directory are those in the base directory except that
-they have been cleaned, sorted by (only) study ID, and compressed.  The
-cleaning includes fixing EOLs, removing "NULL"s and other uninformative
-"data", replacing extraneous double quotes, and converting dates from
-"%m/%d/%Y" to "%Y-%m-%d" format (which is naturally sortable and works
-directly with SQLite's date functions, see
-https://sqlite.org/lang_datefunc.html).  For details, see
+The files in this directory are those in the corresponding `omop_data.*`
+directory except that they have been cleaned, sorted by subject ID and
+date, and compressed.  The cleaning includes fixing EOLs, removing
+"NULL"s and other uninformative "data", replacing extraneous double
+quotes, and converting dates from "%m/%d/%Y" to "%Y-%m-%d" format (which
+is naturally sortable and works directly with SQLite's date functions,
+see https://sqlite.org/lang_datefunc.html).  For details, see
 `clean_sort_compress_data.sh` and `clean_data.awk`.
 
 The goal of sorting is to make files of this size processable by subject
 ID without loading the whole file into memory and without needing a
 database.  The goal of compression is to make the files much quicker to
-load.  (The CPU time needed for decompression will be less than the time
-needed to read the uncompressed file from disk or from over the
-network.)
+load.  (In many cases, the CPU time needed for decompression will be
+less than the time needed to read the uncompressed file from disk or
+from over the network.)
 
 Note that XZ compression is well-supported these days: `less` can
 natively read XZ-compressed files and Python can read XZ-compressed

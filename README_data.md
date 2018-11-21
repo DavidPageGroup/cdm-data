@@ -36,6 +36,18 @@ The "raw" CDM-format data is contained in the directories named
 directories are tagged with the extraction date and any comment.  You
 probably want to work with the clean data rather than the raw data.
 
+The examples for the brand versus generic tasks are in
+`brand_v_generic_examples`.
+
+
+Data Summaries
+--------------
+
+There are summaries of the tables in `summaries`.  Each table summary
+includes the size of the table, the number of unique values in each
+column, and the most frequent values in each column.  See
+`summarize_data.py` for more information.
+
 
 Cleaned, Sorted, and Compressed Data
 ------------------------------------
