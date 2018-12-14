@@ -79,7 +79,11 @@ done
 # Create indexes (if any are specified)
 if [[ -e ${sql_dir}/indexes_${1}.sqlite.sql ]]; then
     log "Creating indexes"
-    sqlite3 ${db_file} < ${sql_dir}/indexes_${1}.sqlite.sql
+    /usr/bin/time -v sqlite3 ${db_file} < ${sql_dir}/indexes_${1}.sqlite.sql
 fi
+
+# Collect statistics for query planning
+log "Analyzing"
+/usr/bin/time -v sqlite3 ${db_file} analyze
 
 log "End"
