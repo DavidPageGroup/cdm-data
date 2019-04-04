@@ -1,7 +1,9 @@
 # How to clean, sort, and compress the CDM-format data
 
-# Copyright (c) 2018 Aubrey Barnard, Jon Badger.  This is free software
-# released under the MIT License.  See `LICENSE.txt` for details.
+# Copyright (c) 2018-2019 Aubrey Barnard, Jon Badger.
+#
+# This is free software released under the MIT License.  See
+# `LICENSE.txt` for details.
 
 # Usage: bash <path-to>/clean_sort_compress_data.sh <src> <dst> &> clean_sort_compress_data.$(date +'%Y%m%d-%H%M%S').log
 
@@ -86,7 +88,9 @@ for file in $(find ${src_dir}/ -maxdepth 1 -iname '*.csv'); do
         # fields are dates (or, for raw data, the third field is drug
         # name, but it's ok to also sort on that).
         ( bupropion*.csv \
-            | duloxetine*.csv )
+            | duloxetine*.csv \
+            | gabapentin*.csv \
+            | methylphenidate*.csv )
             sort_keys="--key=1,1n --key=2,3"
             ;;
         (*)
