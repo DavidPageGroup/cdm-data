@@ -1,7 +1,14 @@
-# Names / Patterns that specify which files Git should ignore
+# Names / Patterns that specify which files / directories Git should
+# ignore
+
+# Copyright (c) 2018-2019 Aubrey Barnard.
 #
-# Copyright (c) 2018 DPRG CDM Data.  This is free software released
-# under the MIT License.  See `LICENSE.txt` for details.
+# This is free software released under the MIT License.  See
+# `LICENSE.txt` for details.
 
 # Ignore backups
 *~
+
+# Ignore Python caches
+__pycache__
+.pytest_cache

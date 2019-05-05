@@ -21,3 +21,15 @@ def open(file, mode='rt'):
         raise ValueError('Not a file, stream, or filename: {!r}'
                          .format(file))
     return file
+
+
+def lookup(name, namespaces=None, modules=None):
+    if namespaces is not None:
+        for namespace in namespaces:
+            if name in namespace:
+                return namespace[name]
+    if modules is not None:
+        for module in modules:
+            if hasattr(module, name):
+                return getattr(module, name)
+    return None
