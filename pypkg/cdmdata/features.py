@@ -9,6 +9,7 @@ create feature vectors
 # https://choosealicense.com/licenses/mit/).
 
 
+import collections
 import csv
 import datetime
 import json
@@ -21,6 +22,21 @@ from . import records
 # Feature records
 
 
+def try_parse_json(text):
+    """
+    Parse the given JSON and return the constructed object.
+
+    Return the given text unmodified if parsing as JSON fails.  Return
+    `None` if the given text is empty.
+    """
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return text
+
+
 def header():
     """Return a header for a table of features."""
     return (
@@ -31,7 +47,7 @@ def header():
         ('val', str),
         ('data_type', str),
         ('feat_func', str),
-        ('args', json.loads),
+        ('args', try_parse_json),
     )
 header_nm2idx = {
     fld[0]: i for (i, fld) in enumerate(header())}

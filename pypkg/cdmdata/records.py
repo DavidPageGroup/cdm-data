@@ -62,9 +62,8 @@ def load(
     """
     parser = mk_parser(header)
     with core.open(csv_filename, 'rt') as file:
-        yield from records.process(
-            records.read(file, csv_format, n_header_lines),
-            parser, include_record, transform_record)
+        yield from process(read(file, csv_format, n_header_lines),
+                           parser, include_record, transform_record)
 
 
 def mk_parser(header, null_values=('',)):
