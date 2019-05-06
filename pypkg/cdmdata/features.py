@@ -15,12 +15,14 @@ import json
 import sys
 
 from . import core
+from . import records
 
 
 # Feature records
 
 
 def header():
+    """Return a header for a table of features."""
     return (
         ('id', int),
         ('name', str),
@@ -35,6 +37,7 @@ header_nm2idx = {
     fld[0]: i for (i, fld) in enumerate(header())}
 
 
+"""Format of CSV tables of features."""
 csv_format = dict(
     delimiter='|',
     doublequote=False,
@@ -45,11 +48,15 @@ csv_format = dict(
 )
 
 
-def read(features_csv_filename, csv_format=csv_format): # FIXME
-    # Read and parse the feature records
-    return list(parse_records(
-        schema.feature_header(), read_records(
-            features_csv_filename, csv_format)))
+def read(features_csv_filename):
+    """
+    Return an iterable of feature records as read from the given file.
+
+    Calls `records.load` with the appropriate arguments for CSV files of
+    features.
+    """
+    return records.load(
+        features_csv_filename, csv_format, header(), 1)
 
 
 def compile_lambda(text): # TODO
@@ -62,6 +69,25 @@ def mk_function(
         modules=None,
         constructor_prefix='mk_func__',
 ):
+    """
+    Look up or create and return the feature function described by the
+    function field in the given feature record.
+
+    The function field can be the name of a function, the name of a
+    function constructor (when prefixed with `constructor_prefix`), or a
+    lambda expression.
+
+    feature_record:
+        List of values agreeing with `header`.
+    function_index:
+        Index of function field in record.
+    modules:
+        List of modules in which to look for functions.  (Looks in this
+        module by default.)
+    constructor_prefix:
+        Prefix that identifies functions that construct feature
+        functions.
+    """
     func_text = feature_record[function_index]
     # Compile feature functions given as lambdas
     if func_text.startswith('lambda'):
@@ -78,6 +104,17 @@ def mk_function(
 
 def mk_functions(feature_records, modules=None,
                  constructor_prefix='mk_func__'):
+    """
+    Create a return a list of feature functions based on the given
+    feature records.
+
+    feature_records:
+        Iterable of feature records.
+    modules:
+        Passed to `mk_function`.
+    constructor_prefix:
+        Passed to `mk_function`.
+    """
     id_idx = header_nm2idx['id']
     func_idx = header_nm2idx['feat_func']
     functions = []
@@ -93,6 +130,18 @@ def mk_functions(feature_records, modules=None,
 
 
 def map_to_functions(features, functions):
+    """
+    Create and return a mapping of feature keys to feature functions.
+
+    Each feature's key is a (tbl, typ) pair.  A key can map to multiple
+    feature functions, so the values in the mapping are lists of
+    (feature_id, feature_function) pairs.
+
+    features:
+        Iterable of feature records.
+    functions:
+        Corresponding iterable of feature functions.
+    """
     feat_key2idsfuncs = collections.defaultdict(list)
     for feat, func in zip(features, functions):
         id, _, tbl, typ, _, _, _, _ = feat
@@ -111,6 +160,10 @@ nm2type = {t.__name__: t for t in (bool, float, int, str)}
 
 
 def get_argument(arguments, index=None, key=None):
+    """
+    Return the indicated (by index or key) argument, or the argument
+    itself if `arguments` is an atomic type.
+    """
     if isinstance(arguments, list) and len(arguments) > 0:
         return arguments[index]
     elif isinstance(arguments, dict) and len(arguments) > 0:
@@ -124,10 +177,20 @@ def get_argument(arguments, index=None, key=None):
 
 
 def event_sequence_id(example, event_sequence):
+    """
+    Feature function: Return the ID of the given event sequence.
+    """
     return event_sequence.id
 
 
 def mk_func__example_field(feature_record):
+    """
+    Create and return a feature function that returns the value of the
+    indicated example field.
+
+    Which field is indicated in the arguments field of the example
+    record.  The field value is converted to the indicated data type.
+    """
     _, _, _, _, _, data_type_name, _, args = feature_record
     ret_type = nm2type[data_type_name]
     field_idx = get_argument(args, 0, 'field_index')
@@ -137,6 +200,16 @@ def mk_func__example_field(feature_record):
 
 
 def mk_func__year_of_fact(feature_record):
+    """
+    Create and return a feature function that returns the year of the
+    indicated fact.
+
+    Assumes the fact has a string value that is parseable as a datetime.
+    The fact key is the (tbl, typ) pair of the feature record.  A date
+    format string for `datetime.datetime.strptime` can be provided in
+    the arguments field.  The year is converted to the indicated data
+    type.
+    """
     _, _, ev_cat, ev_typ, _, data_type_name, _, args = feature_record
     ret_type = nm2type[data_type_name]
     datetime_format = get_argument(args, 0, 'date_format')
@@ -150,6 +223,14 @@ def mk_func__year_of_fact(feature_record):
 
 
 def mk_func__fact_matches(feature_record):
+    """
+    Create and return a feature function that returns true when an event
+    sequence contains a matching fact.
+
+    A fact matches when it has the key (tbl, typ) and the value from the
+    given feature record.  The resulting boolean is converted to the
+    indicated data type.
+    """
     _, _, ev_cat, ev_typ, ev_val, data_type_name, _, _ = feature_record
     ret_type = nm2type[data_type_name]
     def featfunc__fact_matches(example, event_sequence):
@@ -158,6 +239,13 @@ def mk_func__fact_matches(feature_record):
 
 
 def mk_func__has_event(feature_record):
+    """
+    Create and return a feature function that returns true when an event
+    sequence contains the indicated event.
+
+    The (tbl, typ) pair of the feature record is the event type.  The
+    resulting boolean is converted to the indicated data type.
+    """
     _, _, ev_cat, ev_typ, _, data_type_name, _, _ = feature_record
     ret_type = nm2type[data_type_name]
     def featfunc__count_events(example, event_sequence):
@@ -167,6 +255,13 @@ def mk_func__has_event(feature_record):
 
 
 def mk_func__count_events(feature_record):
+    """
+    Create and return a feature function that counts how many times the
+    indicated event occurs in an event sequence.
+
+    The (tbl, typ) pair of the feature record is the event type.  The
+    count is converted to the indicated data type.
+    """
     _, _, ev_cat, ev_typ, _, data_type_name, _, _ = feature_record
     ret_type = nm2type[data_type_name]
     def featfunc__count_events(example, event_sequence):

@@ -12,6 +12,8 @@ import operator
 
 import esal
 
+from . import records
+
 
 # Data format
 
@@ -37,6 +39,7 @@ header_nm2idx = {
     fld[0]: i for (i, fld) in enumerate(header())}
 
 
+"""Format of CSV tables of events."""
 csv_format = dict(
     delimiter='|',
     doublequote=False,
@@ -75,16 +78,11 @@ def read_sequences(
         short-circuit event record processing and event sequence
         construction.  Each ID is parsed before it is looked up.
     parse_record:
-        Function to convert the text fields of each record into usable
-        values: parse_record(list<str>) -> list<object>.
+        Passed to `records.process`.
     include_record:
-        Predicate that returns whether a record should be included or
-        discarded: include_record(list<object>) -> bool.  Applied after
-        parsing a record.
+        Passed to `records.process`.
     transform_record:
-        Function to transform a record before it is converted into an
-        event: transform_record(list<object>) -> list<object>.  Applied
-        after including / discarding records.
+        Passed to `records.process`.
     """
     # Make mapping of header names to indices
     nm2idx = {field[0]: i for (i, field) in enumerate(header)}
@@ -100,18 +98,6 @@ def read_sequences(
         group_by = operator.itemgetter(id_idx)
     else:
         group_by = lambda rec: parse_id(rec[id_idx])
-    # Event record processing pipeline
-    def process_event_records(ev_recs):
-        # Parse the records
-        if parse_record is not None:
-            ev_recs = map(parse_record, ev_recs)
-        # Filter the records
-        if include_record is not None:
-            ev_recs = filter(include_record, ev_recs)
-        # Transform the records
-        if transform_record is not None:
-            ev_recs = map(transform_record, ev_recs)
-        return ev_recs
     # Loop to process each sequence of events that share the same ID
     for rec_id, group in itools.groupby(csv_event_records, group_by):
         # Skip this sequence?
@@ -120,7 +106,8 @@ def read_sequences(
         # Collect facts and events
         facts = []
         evs = []
-        for ev_rec in process_event_records(group):
+        for ev_rec in records.process(
+                group, parse_record, include_record, transform_record):
             lo = ev_rec[lo_idx]
             hi = ev_rec[hi_idx]
             # Unlimited times indicates a fact
