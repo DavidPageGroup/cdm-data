@@ -64,17 +64,6 @@ csv_format = dict(
 )
 
 
-def read(features_csv_filename):
-    """
-    Return an iterable of feature records as read from the given file.
-
-    Calls `records.load` with the appropriate arguments for CSV files of
-    features.
-    """
-    return records.load(
-        features_csv_filename, csv_format, header(), 1)
-
-
 def compile_lambda(text): # TODO
     return None
 
