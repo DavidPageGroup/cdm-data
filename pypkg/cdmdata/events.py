@@ -183,3 +183,118 @@ def read_sequences(
             yield sequence_constructor(records.process(
                 group, parse_record, include_record, transform_record,
             ), rec_id)
+
+
+def periods(
+        events,
+        span_lo=None,
+        span_hi=None,
+        value=None,
+        zero_values=(0, None),
+        min_len=0,
+        backoff=0,
+        output_zero=0,
+):
+    """
+    Yield disjoint intervals corresponding to different values of the
+    given events.
+
+    Converts a sequence of events that approximately represent a signal
+    into a guess at the underlying piecewise constant signal (a sequence
+    of intervals that partitions a span of time, where each interval has
+    a value).  Assumes the given events are sorted by their start times.
+    The conversion gives each interval a minimum length, unions
+    intervals with the same value and then puts them in sequence by
+    truncating an interval at the start of the next interval with a
+    different, nonzero value (with optional back-off).  Finally, fills
+    in gaps with zero values.  This is intended to be useful for
+    constructing event "eras" where the values of an event are mutually
+    exclusive (e.g. different dosages of a medication).
+
+    For example, in the following, the top collection of intervals would
+    be converted into the bottom sequence of intervals given min_len=6
+    and backoff=2.
+
+    --------------------------------------------------
+                      222  22
+       11111  111 11111                  11 11111
+    00000                 00000 000000
+    --------------------------------------------------
+    00 111111 1111111 22222222222 000000 111111111 000
+    --------------------------------------------------
+
+    events:
+        Iterable of events.
+    span_lo:
+        Start (if any) of span to which events are clipped.
+    span_hi:
+        End (if any) of span to which events are clipped.
+    value:
+        Function to extract values from events: value(event) -> object.
+        Default uses `esal.Event.value`.
+    zero_values:
+        Set of values to treat as zero (non-signal) and ignore.
+    min_len:
+        Minimum length of each interval (prior to any truncation).
+    backoff:
+        Size of gap between intervals.  A larger gap increases the
+        chances that an underlying transition from one value to the next
+        happened in the gap.
+        [TODO technically also need a starting lag / offset]
+    output_zero:
+        Value to use when filling in between nonzero values.
+    """
+    prds = []
+    # Lengthen and clip nonzero periods
+    for ev in events:
+        # Ensure a minimum length before clipping
+        lo = ev.when.lo
+        hi = max(ev.when.hi, lo + min_len)
+        val = value(ev) if value is not None else ev.value
+        # Discard any events that are "non-events" (have zero value) or
+        # that are outside the allowed span
+        if (val in zero_values or
+            (span_lo is not None and hi < span_lo) or
+            (span_hi is not None and lo > span_hi)):
+            continue
+        # Clip to allowed span
+        if span_hi is not None:
+            hi = min(hi, span_hi)
+        if span_lo is not None:
+            lo = max(lo, span_lo)
+        prds.append((lo, hi, val))
+    # Merge and sequentialize periods
+    mrg_idx = 0
+    prd_idx = 1
+    while prd_idx < len(prds):
+        lo1, hi1, val1 = prds[mrg_idx]
+        lo2, hi2, val2 = prds[prd_idx]
+        # Merge periods with the same value
+        if hi1 >= lo2 and val1 == val2:
+            prds[mrg_idx] = (lo1, hi2, val1)
+            del prds[prd_idx]
+        else:
+            # Put periods in sequence by removing overlaps
+            if hi1 > lo2:
+                prds[mrg_idx] = (lo1, lo2, val1)
+            mrg_idx += 1
+            prd_idx += 1
+    # Yield periods with intervening zero periods as needed.  Separate
+    # periods by backing off from the following nonzero event (if there
+    # is one).
+    zero_lo = span_lo
+    for (idx, (lo, hi, val)) in enumerate(prds):
+        # Yield a preceding zero period if it would be non-empty after
+        # backing off from the current event
+        zero_hi = lo - backoff
+        if zero_lo < zero_hi:
+            yield (esal.Interval(zero_lo, zero_hi), output_zero)
+        # Back off from the following nonzero event if there is one
+        hi_bk = (max(min(hi, prds[idx + 1][0] - backoff), lo)
+                 if idx + 1 < len(prds)
+                 else hi)
+        yield (esal.Interval(lo, hi_bk), val)
+        # Increment.  Delay the zero period by the backoff amount.
+        zero_lo = hi_bk + backoff
+    if zero_lo < span_hi:
+        yield (esal.Interval(zero_lo, span_hi), output_zero)
