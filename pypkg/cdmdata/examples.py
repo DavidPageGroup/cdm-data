@@ -6,6 +6,9 @@
 # https://choosealicense.com/licenses/mit/).
 
 
+import csv
+
+
 def header(time_type=float):
     """
     Return a header that describes the fields of an example record in a
