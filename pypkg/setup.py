@@ -53,7 +53,7 @@ setuptools.setup(
     # Requirements
     python_requires='~= 3.4',
     install_requires=[
-        'esal ~= 0.3.0',
+        'esal ~= 0.4.0',
     ],
 
     # API

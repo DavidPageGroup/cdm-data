@@ -58,7 +58,7 @@ class FunctionTest(unittest.TestCase):
                 (('hx', 'cancer-father'), 'yes'),
                 (('hx', 'cancer-mother'), 'no'),
             ],
-            id_=808186755,
+            id=808186755,
         )
 
     def test_func__event_sequence_id(self):
