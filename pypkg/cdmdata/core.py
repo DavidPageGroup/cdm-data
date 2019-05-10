@@ -10,6 +10,7 @@ import builtins
 import io
 import pathlib
 import sys
+import warnings
 
 
 def open(file, mode='rt'):
@@ -19,11 +20,11 @@ def open(file, mode='rt'):
     Convenience function that takes anything that could be turned into a
     file-like object and returns a file-like object.
 
-    file:
-        Filename, `pathlib.Path`, stream, or '-', which indicates to use
-        standard input.  Streams are passed through unmodified.
-    mode:
-        As for `builtins.open`.
+    file: str | pathlib.Path | io.TextIOBase | "-"
+        Filename, path, stream, or '-', which indicates to use standard
+        input.  Streams are passed through unmodified.
+    mode: str
+        Passed to `builtins.open`.
     """
     if file == '-':
         file = sys.stdin
@@ -54,3 +55,45 @@ def lookup(name, namespaces=None, modules=None):
             if hasattr(module, name):
                 return getattr(module, name)
     return None
+
+
+class PushbackIterator:
+    """Iterator where you can push elements back into it"""
+
+    def __init__(self, iterable):
+        self._iter = iter(iterable)
+        self._stack = []
+        self._next = self._iter.__next__
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self._next()
+
+    def push(self, item):
+        self._stack.append(item)
+        self._next = self.pop
+
+    def pop(self):
+        item = self._stack.pop()
+        if len(self._stack) == 0:
+            self._next = self._iter.__next__
+        return item
+
+
+def deprecated(message=None):
+    """
+    Return a decorator that wraps a function with the given warning
+    message.
+    """
+    def mk_deprecated_wrapper(function):
+        msg = (message
+               if message is not None
+               else f'`{function.__module__}.{function.__name__}` '
+               'is deprecated')
+        def wrap_deprecated(*args, **kwds):
+            warnings.warn(DeprecationWarning(msg), stacklevel=2)
+            return function(*args, **kwds)
+        return wrap_deprecated
+    return mk_deprecated_wrapper
