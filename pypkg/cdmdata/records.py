@@ -25,11 +25,13 @@ def read(csv_file, csv_format, n_header_lines=0):
     n_header_lines:
         Number of header lines to skip before returning records.
     """
-    csv_reader = csv.reader(csv_file, **csv_format)
-    records = iter(csv_reader)
-    # Skip any header
+    records = csv.reader(csv_file, **csv_format)
+    # Skip any header, but do so safely in case there are not enough
+    # lines
     for _ in range(n_header_lines):
-        next(records)
+        rec = next(records, None)
+        if rec is None:
+            break
     return records
 
 
