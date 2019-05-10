@@ -77,7 +77,8 @@ def read_csv(
         csv_filename,
         csv_format,
         header,
-        detect_header=True,
+        header_detector=True,
+        parser=True,
         include_record=None,
         transform_record=None,
 ):
@@ -85,8 +86,8 @@ def read_csv(
     Read and yield records from the given CSV file.
 
     Opens the file, reads records according to the given CSV format,
-    parses the records according to the given header, optionally filters
-    and transforms the records, and closes the file.
+    optionally parses, filters and transforms the records, and closes
+    the file.
 
     csv_filename:
         Passed to `core.open`.
@@ -97,7 +98,7 @@ def read_csv(
     header:
         Sequence of (name, type) pairs that describe the columns of the
         CSV.  Passed to `mk_parser`.
-    detect_header: bool | function(int, list<str>)->bool
+    header_detector: bool | function(int, list<str>)->bool | None
         Whether and how to detect records in the file that are part of
         its header.  If `True`, use the field names in the given header
         to make a detector function.  If a detector function, apply it
@@ -105,29 +106,39 @@ def read_csv(
         the file and discard each such record until it returns `False`.
         (This will have to do until someone implements a rewindable
         stream that can be used with the CSV sniffer.)
+    parser: bool | function(list<str>)->list<object> | None
+        Whether and how to parse records.  If `True`, use the given
+        header to construct a parser using `mk_parser` and pass to
+        `process`.  If a function, pass to `process` directly.
     include_record:
         Passed to `process`.
     transform_record:
         Passed to `process`.
     """
-    # Create a function to parse each row
-    parser = mk_parser(header)
-    # Use or make detector for header if requested
-    is_header = None
-    if callable(detect_header):
-        is_header = detect_header
-    elif detect_header is True:
-        is_header = is_header_if_has_fields(*(f[0] for f in header))
+    # Use or make detector for header as requested
+    if callable(header_detector):
+        pass
+    elif header_detector is True:
+        header_detector = is_header_if_has_fields(*(f[0] for f in header))
+    else:
+        header_detector = None
+    # Use or make parser as requested
+    if callable(parser):
+        pass
+    elif parser is True:
+        parser = mk_parser(header)
+    else:
+        parser = None
     # Open the file or stream
     with core.open(csv_filename, 'rt') as file:
         # Read records from the CSV.  `csv.reader` is its own iterator,
         # so no need to call `iter` on it.
         records = csv.reader(file, **csv_format)
         # Skip the header (if any) if desired
-        if is_header is not None:
+        if header_detector is not None:
             rec = None
             for idx, rec in enumerate(records):
-                if not is_header(idx, rec):
+                if not header_detector(idx, rec):
                     break
                 # Discard the record if it is part of the header
                 rec = None

@@ -13,4 +13,4 @@ https://choosealicense.com/licenses/mit/).
 
 
 # Version
-__version__ = '0.2.2'
+__version__ = '0.2.3'
