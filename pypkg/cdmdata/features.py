@@ -15,7 +15,11 @@ import datetime
 import json
 import sys
 
+import esal
+
 from . import core
+from . import events
+from . import examples
 from . import records
 
 
@@ -152,6 +156,19 @@ def map_to_functions(features, functions):
         id, _, tbl, typ, _, _, _, _ = feat
         feat_key2idsfuncs[tbl, typ].append((id, func))
     return feat_key2idsfuncs
+
+
+def load(features_csv_filename, csv_format=csv_format, header=header()):
+    """
+    Load features and return a (records, functions, map-to-functions)
+    triple.
+    """
+    feature_records = list(records.read_csv(
+        features_csv_filename, csv_format, header))
+    feature_functions = mk_functions(feature_records)
+    feature_key2idsfuncs = map_to_functions(
+        feature_records, feature_functions)
+    return feature_records, feature_functions, feature_key2idsfuncs
 
 
 # Feature functions
@@ -341,3 +358,73 @@ def write_vector(label, feature_vector, output=sys.stdout):
         print(' ', feat_id, ':', feature_vector[feat_id],
               sep='', end='', file=output)
     print(file=output)
+
+
+def mk_feature_vectors(
+        events_csv_filename,
+        examples_csv_filename,
+        features_csv_filename,
+        events_csv_format=events.csv_format,
+        examples_csv_format=examples.csv_format,
+        features_csv_format=csv_format,
+        events_header=events.header(),
+        examples_header=examples.header(),
+        features_header=header(),
+        include_event_record=None,
+        transform_event_record=None,
+        always_feature_keys=(),
+):
+    """
+    Make and yield feature vectors.
+
+    Yields (example-label, example-weight, feature-vector) triples.
+    """
+    # Unpack events header
+    ev_hdr_nm2idx = {f[0]: i for i, f in enumerate(events_header)}
+    ev_id_idx = ev_hdr_nm2idx['id']
+    # Unpack examples header
+    ex_hdr_nm2idx = {f[0]: i for i, f in enumerate(examples_header)}
+    ex_id_idx = ex_hdr_nm2idx['id']
+    ex_lo_idx = ex_hdr_nm2idx['lo']
+    ex_hi_idx = ex_hdr_nm2idx['hi']
+    ex_cls_idx = ex_hdr_nm2idx['cls']
+    ex_wgt_idx = ex_hdr_nm2idx['wgt']
+    # Load example definitions
+    exs = records.read_csv(
+        examples_csv_filename, examples_csv_format, examples_header)
+    # Collect examples by ID
+    id2ex = collections.defaultdict(list)
+    for ex in exs:
+        id2ex[ex[ex_id_idx]].append(ex)
+    # Load feature definitions
+    _, _, feat_key2idsfuncs = load(
+        features_csv_filename, features_csv_format, features_header)
+    # Create a feature vector for each example definition.  Only
+    # construct event sequences for IDs that have examples.
+    for ev_seq in events.read_sequences(
+            records.read_csv(
+                events_csv_filename,
+                events_csv_format,
+                events_header,
+                header_detector=True,
+                parser=False,
+            ),
+            header=events_header,
+            parse_id=events_header[ev_id_idx][1],
+            include_ids=id2ex,
+            parse_record=records.mk_parser(events_header),
+            include_record=include_event_record,
+            transform_record=transform_event_record,
+    ):
+        # Skip any IDs without examples
+        for ex in id2ex.get(ev_seq.id, ()):
+            # Create a subsequence that includes all the events that
+            # overlap the example period
+            itvl = esal.Interval(ex[ex_lo_idx], ex[ex_hi_idx])
+            subseq = ev_seq.subsequence(ev_seq.events_overlapping(
+                itvl.lo, itvl.hi, itvl.is_lo_open, itvl.is_hi_open))
+            # Create feature vector
+            fv = vector(
+                feat_key2idsfuncs, ex, subseq, always_feature_keys)
+            # Yield feature fector
+            yield ex[ex_cls_idx], ex[ex_wgt_idx], fv
