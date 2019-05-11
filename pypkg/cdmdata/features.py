@@ -372,6 +372,7 @@ def mk_feature_vectors(
         features_header=header(),
         include_event_record=None,
         transform_event_record=None,
+        include_example_record=None,
         always_feature_keys=(),
 ):
     """
@@ -387,11 +388,10 @@ def mk_feature_vectors(
     ex_id_idx = ex_hdr_nm2idx['id']
     ex_lo_idx = ex_hdr_nm2idx['lo']
     ex_hi_idx = ex_hdr_nm2idx['hi']
-    ex_cls_idx = ex_hdr_nm2idx['cls']
-    ex_wgt_idx = ex_hdr_nm2idx['wgt']
     # Load example definitions
     exs = records.read_csv(
-        examples_csv_filename, examples_csv_format, examples_header)
+        examples_csv_filename, examples_csv_format, examples_header,
+        include_record=include_example_record)
     # Collect examples by ID
     id2ex = collections.defaultdict(list)
     for ex in exs:
@@ -426,5 +426,5 @@ def mk_feature_vectors(
             # Create feature vector
             fv = vector(
                 feat_key2idsfuncs, ex, subseq, always_feature_keys)
-            # Yield feature fector
-            yield ex[ex_cls_idx], ex[ex_wgt_idx], fv
+            # Yield example and its feature fector
+            yield ex, fv
