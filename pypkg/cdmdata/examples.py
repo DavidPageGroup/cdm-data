@@ -39,6 +39,8 @@ def header(time_type=float):
         Example weight.  Perhaps the length of the period.
     n_evs: int
         Number of events during the example period.
+    jsn: str
+        Any extra information in JSON format.
 
     The fields of an example record are defined by how you use them.
     For example, patient 123456789 took drug A from 2005-11-22 to
@@ -47,7 +49,7 @@ def header(time_type=float):
     which makes them positive for outcome X.  Thus, their record might
     be:
 
-        123456789|2005-11-22|2006-08-16|rx-A:dx-X|c|+|267.0|13
+        123456789|2005-11-22|2006-08-16|rx-A:dx-X|c|+|267.0|13|{"age": 50}
     """
     return (
         ('id', int),
@@ -58,6 +60,7 @@ def header(time_type=float):
         ('cls', str),
         ('wgt', float),
         ('n_evs', int),
+        ('jsn', str),
     )
 header_nm2idx = {
     fld[0]: i for (i, fld) in enumerate(header())}
