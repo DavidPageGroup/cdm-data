@@ -158,13 +158,18 @@ def map_to_functions(features, functions):
     return feat_key2idsfuncs
 
 
-def load(features_csv_filename, csv_format=csv_format, header=header()):
+def load(
+        features_csv_filename,
+        csv_format=csv_format,
+        header=header(),
+        header_detector=True,
+):
     """
     Load features and return a (records, functions, map-to-functions)
     triple.
     """
     feature_records = list(records.read_csv(
-        features_csv_filename, csv_format, header))
+        features_csv_filename, csv_format, header, header_detector))
     feature_functions = mk_functions(feature_records)
     feature_key2idsfuncs = map_to_functions(
         feature_records, feature_functions)
@@ -370,6 +375,9 @@ def mk_feature_vectors(
         events_header=events.header(),
         examples_header=examples.header(),
         features_header=header(),
+        events_header_detector=True,
+        examples_header_detector=True,
+        features_header_detector=True,
         include_event_record=None,
         transform_event_record=None,
         include_example_record=None,
@@ -391,14 +399,15 @@ def mk_feature_vectors(
     # Load example definitions
     exs = records.read_csv(
         examples_csv_filename, examples_csv_format, examples_header,
-        include_record=include_example_record)
+        examples_header_detector, include_record=include_example_record)
     # Collect examples by ID
     id2ex = collections.defaultdict(list)
     for ex in exs:
         id2ex[ex[ex_id_idx]].append(ex)
     # Load feature definitions
     _, _, feat_key2idsfuncs = load(
-        features_csv_filename, features_csv_format, features_header)
+        features_csv_filename, features_csv_format, features_header,
+        features_header_detector)
     # Create a feature vector for each example definition.  Only
     # construct event sequences for IDs that have examples.
     for ev_seq in events.read_sequences(
@@ -406,7 +415,7 @@ def mk_feature_vectors(
                 events_csv_filename,
                 events_csv_format,
                 events_header,
-                header_detector=True,
+                header_detector=events_header_detector,
                 parser=False,
             ),
             header=events_header,
