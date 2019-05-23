@@ -7,6 +7,7 @@
 
 
 import io
+import re
 import unittest
 
 from .. import events
@@ -90,3 +91,56 @@ class ReadCsvTest(unittest.TestCase):
                     file, self.csv_format, self.header,
                     records.is_header_if_has_fields(*field_names))
                 self.assertEqual([self.records1[2]], list(recs))
+
+
+class IsHeaderTest(unittest.TestCase):
+
+    def test_is_header_if_first_n_lines(self):
+        is_header = records.is_header_if_first_n_lines(5)
+        self.assertTrue(is_header(4, None))
+        self.assertFalse(is_header(5, None))
+
+    def test_is_header_if_has_fields(self):
+        is_header = records.is_header_if_has_fields('x1', 'x2')
+        self.assertTrue(is_header(None, ('x0', 'x1', 'x2')))
+        self.assertTrue(is_header(None, ('x1', 'x2')))
+        self.assertFalse(is_header(None, ('x0', 'x1')))
+        self.assertFalse(is_header(None, ('x2',)))
+        self.assertFalse(is_header(None, ()))
+
+    def test_is_header_if_fields_match(self):
+        pat = re.compile(r'x\d')
+        is_header = records.is_header_if_fields_match(pat)
+        self.assertTrue(is_header(None, ('x0', 'x1', 'x2')))
+        self.assertFalse(is_header(None, ('x9', 'x0', 'xa')))
+        self.assertFalse(is_header(None, ()))
+
+    def test_identifier_pattern(self):
+        str2match = {
+            '1234567890': False,
+            '-12.34567e+89': False,
+            '0xdeadbeef': False,
+            'x': True,
+            'x0': True,
+            'x_0': True,
+            'x-0': True,
+            'x+0': True,
+            'x.0': True,
+            '_0': True,
+            '-0': False,
+            '+0': False,
+            '.0': False,
+        }
+        pat = records._identifier_pattern
+        for text, is_match in str2match.items():
+            with self.subTest(text):
+                if is_match:
+                    self.assertIsNotNone(pat.match(text))
+                else:
+                    self.assertIsNone(pat.match(text))
+
+    def test_is_header_if_identifiers(self):
+        is_header = records.is_header_if_identifiers(2)
+        self.assertTrue(is_header(1, ('x_0', 'x-0', 'x+0', 'x.0')))
+        self.assertFalse(is_header(2, ('x_0', 'x-0', 'x+0', 'x.0')))
+        self.assertFalse(is_header(1, ('_0', '-0', '+0', '.0')))

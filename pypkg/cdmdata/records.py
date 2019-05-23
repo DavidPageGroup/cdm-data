@@ -7,6 +7,7 @@
 
 
 import csv
+import re
 
 from . import core
 
@@ -119,7 +120,7 @@ def read_csv(
     if callable(header_detector):
         pass
     elif header_detector is True:
-        header_detector = is_header_if_has_fields(*(f[0] for f in header))
+        header_detector = is_header_if_identifiers()
     else:
         header_detector = None
     # Use or make parser as requested
@@ -176,6 +177,32 @@ def is_header_if_has_fields(*fields):
     fields = set(fields)
     def is_header(index, record):
         return fields <= set(record)
+    return is_header
+
+
+def is_header_if_fields_match(pattern):
+    """
+    Return a header detector function that considers a record to be part
+    of the CSV header if all of its fields match the given pattern.
+    """
+    def is_header(index, record):
+        return len(record) > 0 and all(
+            pattern.match(field) for field in record)
+    return is_header
+
+
+_identifier_pattern = re.compile(r'[a-zA-Z_][\w.+-]*')
+
+def is_header_if_identifiers(max_n_header_lines=1):
+    """
+    Return a header detector function that considers a record to be part
+    of the CSV header if all of its fields are identifiers and it is
+    among the first N lines.
+    """
+    is_identifiers = is_header_if_fields_match(_identifier_pattern)
+    def is_header(index, record):
+        return (index < max_n_header_lines and
+                is_identifiers(index, record))
     return is_header
 
 
