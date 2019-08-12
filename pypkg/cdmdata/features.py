@@ -75,6 +75,7 @@ def compile_lambda(text): # TODO
 def mk_function(
         feature_record,
         function_index=header_nm2idx['feat_func'],
+        namespaces=None,
         modules=None,
         constructor_prefix='mk_func__',
 ):
@@ -90,13 +91,21 @@ def mk_function(
         List of values agreeing with `header`.
     function_index:
         Index of function field in record.
+    namespaces:
+        List of namespaces (dictionaries) in which to look for
+        functions.  (Always looks in the namespace of this module as a
+        last resort.)
     modules:
-        List of modules in which to look for functions.  (Looks in this
-        module by default.)
+        List of modules in which to look for functions.
     constructor_prefix:
         Prefix that identifies functions that construct feature
         functions.
     """
+    if namespaces is None:
+        namespaces = []
+    # Make new list to avoid modifying argument
+    namespaces = namespaces + [globals()]
+    # Get the function text
     func_text = feature_record[function_index]
     # Compile feature functions given as lambdas
     if func_text.startswith('lambda'):
@@ -104,14 +113,14 @@ def mk_function(
     # Look up function
     else:
         mk_func = core.lookup(
-            constructor_prefix + func_text, [globals()], modules)
+            constructor_prefix + func_text, namespaces, modules)
         if mk_func is not None:
             return mk_func(feature_record)
         else:
-            return core.lookup(func_text, [globals()], modules)
+            return core.lookup(func_text, namespaces, modules)
 
 
-def mk_functions(feature_records, modules=None,
+def mk_functions(feature_records, namespaces=None, modules=None,
                  constructor_prefix='mk_func__'):
     """
     Create a return a list of feature functions based on the given
@@ -119,6 +128,8 @@ def mk_functions(feature_records, modules=None,
 
     feature_records:
         Iterable of feature records.
+    namespaces:
+        Passed to `mk_function`.
     modules:
         Passed to `mk_function`.
     constructor_prefix:
@@ -129,7 +140,7 @@ def mk_functions(feature_records, modules=None,
     functions = []
     for feat_rec in feature_records:
         feat_func = mk_function(
-            feat_rec, func_idx, modules, constructor_prefix)
+            feat_rec, func_idx, namespaces, modules, constructor_prefix)
         if feat_func is None:
             raise ValueError(
                 'Feature {}: Failed to find / construct function: {!r}'
@@ -163,6 +174,8 @@ def load(
         csv_format=csv_format,
         header=header(),
         header_detector=True,
+        namespaces=None,
+        modules=None,
 ):
     """
     Load features and return a (records, functions, map-to-functions)
@@ -170,7 +183,8 @@ def load(
     """
     feature_records = list(records.read_csv(
         features_csv_filename, csv_format, header, header_detector))
-    feature_functions = mk_functions(feature_records)
+    feature_functions = mk_functions(
+        feature_records, namespaces, modules)
     feature_key2idsfuncs = map_to_functions(
         feature_records, feature_functions)
     return feature_records, feature_functions, feature_key2idsfuncs
@@ -382,6 +396,8 @@ def mk_feature_vectors(
         transform_event_record=None,
         include_example_record=None,
         always_feature_keys=(),
+        feature_function_namespaces=None,
+        feature_function_modules=None,
 ):
     """
     Make and yield feature vectors.
@@ -406,8 +422,13 @@ def mk_feature_vectors(
         id2ex[ex[ex_id_idx]].append(ex)
     # Load feature definitions
     _, _, feat_key2idsfuncs = load(
-        features_csv_filename, features_csv_format, features_header,
-        features_header_detector)
+        features_csv_filename,
+        features_csv_format,
+        features_header,
+        features_header_detector,
+        feature_function_namespaces,
+        feature_function_modules,
+    )
     # Create a feature vector for each example definition.  Only
     # construct event sequences for IDs that have examples.
     for ev_seq in events.read_sequences(
