@@ -134,3 +134,27 @@ class FunctionTest(unittest.TestCase):
                 feat_func = features.mk_function(feat_recs[idx])
                 self.assertEqual(
                     expecteds[idx], feat_func(None, self.ev_seq))
+
+    def test_func__count_events_matching(self):
+        feat_recs = [
+            [63963, 'mx-4-hi', 'mx', '4', 'hi', 'int',
+             'count_events_matching', dict(get_value='ev_val_0')],
+            [63964, 'mx-4-lo', 'mx', '4', 'lo', 'int',
+             'count_events_matching', dict(get_value='ev_val_0')],
+            [63965, 'mx-4-ok', 'mx', '4', 'ok', 'int',
+             'count_events_matching', dict(get_value='ev_val_0')],
+            [26224, 'mx-8-any', 'mx', '8', 'lo,ok,hi', 'int',
+             'count_events_matching', dict(get_value='ev_val_0')],
+            [26225, 'mx-8-abn', 'mx', '8', 'lo;hi;ab', 'int',
+             'count_events_matching',
+             dict(delimiter=';', get_value='ev_val_0')],
+        ]
+        def ev_val_0(ev):
+            return ev.value[0]
+        expecteds = [1, 1, 0, 2, 1]
+        for idx in range(len(feat_recs)):
+            with self.subTest(feat_recs[idx][1]):
+                feat_func = features.mk_function(
+                    feat_recs[idx], namespaces=[locals()])
+                self.assertEqual(
+                    expecteds[idx], feat_func(None, self.ev_seq))

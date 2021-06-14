@@ -53,6 +53,7 @@ import collections
 import csv
 import datetime
 import json
+import operator
 import sys
 
 import esal
@@ -155,7 +156,8 @@ def mk_function(
         mk_func = core.lookup(
             constructor_prefix + func_text, namespaces, modules)
         if mk_func is not None:
-            return mk_func(feature_record)
+            return mk_func(
+                feature_record, namespaces=namespaces, modules=modules)
         else:
             return core.lookup(func_text, namespaces, modules)
 
@@ -289,7 +291,8 @@ def event_sequence_id(example, event_sequence):
     return event_sequence.id
 
 
-def mk_func__example_field(feature_record):
+def mk_func__example_field(
+        feature_record, namespaces=None, modules=None):
     """
     Create and return a feature function that returns the value of the
     indicated example field.
@@ -305,7 +308,8 @@ def mk_func__example_field(feature_record):
     return featfunc__example_field
 
 
-def mk_func__year_of_fact(feature_record):
+def mk_func__year_of_fact(
+        feature_record, namespaces=None, modules=None):
     """
     Create and return a feature function that returns the year of the
     indicated fact.
@@ -328,7 +332,8 @@ def mk_func__year_of_fact(feature_record):
     return featfunc__year_of_fact
 
 
-def mk_func__fact_matches(feature_record):
+def mk_func__fact_matches(
+        feature_record, namespaces=None, modules=None):
     """
     Create and return a feature function that returns true when an event
     sequence contains a matching fact.
@@ -355,7 +360,7 @@ def mk_func__fact_matches(feature_record):
     return featfunc__fact_matches
 
 
-def mk_func__has_event(feature_record):
+def mk_func__has_event(feature_record, namespaces=None, modules=None):
     """
     Create and return a feature function that returns true when an event
     sequence contains the indicated event.
@@ -371,7 +376,8 @@ def mk_func__has_event(feature_record):
     return featfunc__count_events
 
 
-def mk_func__count_events(feature_record):
+def mk_func__count_events(
+        feature_record, namespaces=None, modules=None):
     """
     Create and return a feature function that counts how many times the
     indicated event occurs in an event sequence.
@@ -385,6 +391,47 @@ def mk_func__count_events(feature_record):
         return ret_type(
             event_sequence.n_events_of_type((ev_cat, ev_typ)))
     return featfunc__count_events
+
+
+def mk_func__count_events_matching(
+        feature_record, namespaces=None, modules=None):
+    """
+    Create and return a feature function that counts how many times the
+    indicated event occurs in an event sequence with values matching the
+    specified ones.
+
+    An event matches when it has the event type specified as the (tbl,
+    typ) pair in the given feature record, and when it has one of the
+    values from the feature record.  The resulting count is converted to
+    the data type indicated in the feature record.
+
+    There are two optional arguments to the feature function
+    construction: (1) a delimiter (default ',') for the set of matching
+    values (as for `fact_matches`), and (2) the name of the function to
+    use to extract the query value from an event.  If not specified, the
+    query value is just the event value.  For example, the following
+    feature record specifies a feature that counts abnormal lab results,
+    where the lab result code is stored as part of the event value and
+    the function `get_lab_code` extracts it.
+
+    ```
+    28195|mx-364688946-ab|mx|364688946|lo;hi;ab|int|count_events_matching|[";", "get_lab_code"]
+    ```
+    """
+    _, _, ev_cat, ev_typ, ev_vals, data_type_name, _, args = feature_record
+    ret_type = nm2type[data_type_name]
+    delimiter = get_option(args, 0, 'delimiter', ',')
+    get_value = get_option(args, 1, 'get_value')
+    get_value = (core.lookup(get_value, namespaces, modules)
+                 if isinstance(get_value, str)
+                 else operator.attrgetter('value'))
+    # Handle multiple values
+    vals = set(ev_vals.split(delimiter))
+    def featfunc__count_events_matching(example, event_sequence):
+        return ret_type(sum(
+            1 for ev in event_sequence.events((ev_cat, ev_typ))
+            if get_value(ev) in vals))
+    return featfunc__count_events_matching
 
 
 # Feature vectors
