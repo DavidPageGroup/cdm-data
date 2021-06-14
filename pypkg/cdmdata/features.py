@@ -243,12 +243,16 @@ nm2type = {t.__name__: t for t in (bool, float, int, str)}
 
 def get_argument(arguments, index=None, key=None):
     """
-    Return the indicated (by index or key) argument, or the argument
-    itself if `arguments` is an atomic type.
+    Return the indicated argument.
+
+    If `arguments` is a collection, then the indicated argument value is
+    looked up by index or key (depending on the collection).  If
+    `arguments` is just a single, atomic value, then that value is
+    returned.  Otherwise, an exception is raised.
     """
-    if isinstance(arguments, list) and len(arguments) > 0:
+    if isinstance(arguments, list):
         return arguments[index]
-    elif isinstance(arguments, dict) and len(arguments) > 0:
+    elif isinstance(arguments, dict):
         return arguments[key]
     elif (isinstance(arguments, (int, float, str, bool))
           or arguments is None):
@@ -256,6 +260,26 @@ def get_argument(arguments, index=None, key=None):
     else:
         raise ValueError('Unrecognized arguments value: {!r}'
                          .format(args))
+
+
+def get_option(
+        arguments, index=None, key=None, default=None, atomic_ok=True):
+    """
+    Return the indicated optional argument or a default value.
+
+    If `arguments` is a collection, then the indicated argument value is
+    looked up by index or key (depending on the collection).  If
+    `arguments` is just a single, atomic value, then that value is
+    returned if allowed.  Otherwise, the default value is returned.
+    """
+    if isinstance(arguments, list) and len(arguments) > index:
+        return arguments[index]
+    elif isinstance(arguments, dict) and key in arguments:
+        return arguments[key]
+    elif atomic_ok and isinstance(arguments, (int, float, str, bool)):
+        return arguments
+    else:
+        return default
 
 
 def event_sequence_id(example, event_sequence):
@@ -313,9 +337,9 @@ def mk_func__fact_matches(feature_record):
     from the given feature record.  The resulting boolean is converted
     to the indicated data type.
 
-    A delimiter for the set of values can be passed as an argument in
-    the feature record.  For example, the following feature record uses
-    a dash to separate stage synonyms.
+    A delimiter (default ',') for the set of matching values can be
+    passed as an argument in the feature record.  For example, the
+    following feature record uses a dash to separate stage synonyms.
 
     ```
     15815|hx-742411246-stage|hx|742411246|3-iii-III|str|fact_matches|-
@@ -323,7 +347,7 @@ def mk_func__fact_matches(feature_record):
     """
     _, _, ev_cat, ev_typ, ev_vals, data_type_name, _, args = feature_record
     ret_type = nm2type[data_type_name]
-    delimiter = get_argument(args, 0, 'delimiter') if args else ','
+    delimiter = get_option(args, 0, 'delimiter', ',')
     # Handle multiple values
     vals = set(ev_vals.split(delimiter))
     def featfunc__fact_matches(example, event_sequence):
