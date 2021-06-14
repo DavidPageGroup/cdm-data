@@ -1,6 +1,6 @@
 """Tests `features.py`"""
 
-# Copyright (c) 2019 Aubrey Barnard.
+# Copyright (c) 2019, 2021 Aubrey Barnard.
 #
 # This is free, open software licensed under the [MIT License](
 # https://choosealicense.com/licenses/mit/).
