@@ -1,9 +1,49 @@
 """
 Functionality for applying feature functions to event sequences to
-create feature vectors
+create feature vectors, and for creating feature functions from a table
+specified in a delimited file.
+
+Example table of feature functions for
+* facts
+  * demographic / biographic information (bx)
+  * custom / computed (cx)
+  * medical history (hx)
+* events
+  * conditions / diagnoses (dx)
+  * measurements / labs (mx)
+  * observations (ox)
+  * procedures (px)
+  * drugs (rx)
+  * visits (vx)
+  * deaths (xx)
+```
+id|name|tbl|typ|val|data_type|feat_func|args
+1|_attr-id|_attr|id||int|event_sequence_id|
+2|_attr-wgt|_attr|wgt||float|example_field|6
+3|bx-yob|bx|dob||int|year_of_fact|%Y-%m-%d
+4|bx-gndr-fem|bx|gndr|F|int|fact_matches|
+5|bx-gndr-mal|bx|gndr|M|int|fact_matches|
+6|bx-gndr-oth|bx|gndr|O|int|fact_matches|
+7|bx-gndr-unk|bx|gndr|U|int|fact_matches|
+8|bx-race-1|bx|race|515|int|fact_matches|
+9|bx-race-2|bx|race|516|int|fact_matches|
+10|bx-ethn-1|bx|ethn|63|int|fact_matches|
+11|bx-ethn-2|bx|ethn|64|int|fact_matches|
+12|cx-age|cx|age||float|age|date
+13|dx-0|dx|0||int|count_events|
+14|mx-0|mx|0||int|count_events|
+15|mx-0-lo|mx|0|lo|int|count_events_matching|
+16|mx-0-ok|mx|0|ok|int|count_events_matching|
+17|mx-0-hi|mx|0|hi|int|count_events_matching|
+18|ox-0|ox|0||int|count_events|
+19|px-0|px|0||int|count_events|
+20|rx-0|rx|0||int|count_events|
+21|vx-0|vx|0||int|count_events|
+22|xx-0|xx|0||int|count_events|
+```
 """
 
-# Copyright (c) 2019 Aubrey Barnard.
+# Copyright (c) 2019, 2021 Aubrey Barnard.
 #
 # This is free, open software licensed under the [MIT License](
 # https://choosealicense.com/licenses/mit/).
@@ -85,7 +125,7 @@ def mk_function(
 
     The function field can be the name of a function, the name of a
     function constructor (when prefixed with `constructor_prefix`), or a
-    lambda expression.
+    lambda expression (TODO).
 
     feature_record:
         List of values agreeing with `header`.
@@ -153,7 +193,8 @@ def map_to_functions(features, functions):
     """
     Create and return a mapping of feature keys to feature functions.
 
-    Each feature's key is a (tbl, typ) pair.  A key can map to multiple
+    Each feature's key is a (tbl, typ) pair.  To support applying
+    multiple functions to the same data, a key can map to multiple
     feature functions, so the values in the mapping are lists of
     (feature_id, feature_function) pairs.
 
@@ -229,7 +270,7 @@ def mk_func__example_field(feature_record):
     Create and return a feature function that returns the value of the
     indicated example field.
 
-    Which field is indicated in the arguments field of the example
+    Which field is indicated in the arguments field of the feature
     record.  The field value is converted to the indicated data type.
     """
     _, _, _, _, _, data_type_name, _, args = feature_record
@@ -268,14 +309,25 @@ def mk_func__fact_matches(feature_record):
     Create and return a feature function that returns true when an event
     sequence contains a matching fact.
 
-    A fact matches when it has the key (tbl, typ) and the value from the
-    given feature record.  The resulting boolean is converted to the
-    indicated data type.
+    A fact matches when it has the key (tbl, typ) and one of the values
+    from the given feature record.  The resulting boolean is converted
+    to the indicated data type.
+
+    A delimiter for the set of values can be passed as an argument in
+    the feature record.  For example, the following feature record uses
+    a dash to separate stage synonyms.
+
+    ```
+    15815|hx-742411246-stage|hx|742411246|3-iii-III|str|fact_matches|-
+    ```
     """
-    _, _, ev_cat, ev_typ, ev_val, data_type_name, _, _ = feature_record
+    _, _, ev_cat, ev_typ, ev_vals, data_type_name, _, args = feature_record
     ret_type = nm2type[data_type_name]
+    delimiter = get_argument(args, 0, 'delimiter') if args else ','
+    # Handle multiple values
+    vals = set(ev_vals.split(delimiter))
     def featfunc__fact_matches(example, event_sequence):
-        return ret_type(event_sequence.fact((ev_cat, ev_typ)) == ev_val)
+        return ret_type(event_sequence.fact((ev_cat, ev_typ)) in vals)
     return featfunc__fact_matches
 
 

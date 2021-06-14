@@ -95,8 +95,12 @@ class FunctionTest(unittest.TestCase):
              'int', 'fact_matches', None],
             [54547, 'bx-gndr-M', 'bx', 'gndr', 'M',
              'int', 'fact_matches', None],
+            [61122, 'bx-gndr-any', 'bx', 'gndr', 'F,M,O,U',
+             'int', 'fact_matches', None],
+            [48965, 'bx-gndr-fm', 'bx', 'gndr', 'F-M',
+             'int', 'fact_matches', '-'],
         ]
-        expecteds = [0, 1]
+        expecteds = [0, 1, 1, 1]
         for idx in range(len(feat_recs)):
             with self.subTest(feat_recs[idx][1]):
                 feat_func = features.mk_function(feat_recs[idx])
