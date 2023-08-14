@@ -118,15 +118,15 @@ def mk_function(
         function_index=header_nm2idx['feat_func'],
         namespaces=None,
         modules=None,
-        constructor_prefix='mk_func__',
+        constructor_prefixes=['mk_func__'],
 ):
     """
     Look up or create and return the feature function described by the
     function field in the given feature record.
 
     The function field can be the name of a function, the name of a
-    function constructor (when prefixed with `constructor_prefix`), or a
-    lambda expression (TODO).
+    function constructor (when prefixed with one of the
+    `constructor_prefixes`), or a lambda expression (TODO).
 
     feature_record:
         List of values agreeing with `header`.
@@ -138,8 +138,8 @@ def mk_function(
         last resort.)
     modules:
         List of modules in which to look for functions.
-    constructor_prefix:
-        Prefix that identifies functions that construct feature
+    constructor_prefixes:
+        Prefixes that identify functions that construct feature
         functions.
     """
     if namespaces is None:
@@ -153,17 +153,17 @@ def mk_function(
         return compile_lambda(func_text)
     # Look up function
     else:
-        mk_func = core.lookup(
-            constructor_prefix + func_text, namespaces, modules)
-        if mk_func is not None:
-            return mk_func(
-                feature_record, namespaces=namespaces, modules=modules)
-        else:
-            return core.lookup(func_text, namespaces, modules)
+        for constructor_prefix in constructor_prefixes:
+            mk_func = core.lookup(
+                constructor_prefix + func_text, namespaces, modules)
+            if mk_func is not None:
+                return mk_func(
+                    feature_record, namespaces=namespaces, modules=modules)
+        return core.lookup(func_text, namespaces, modules)
 
 
 def mk_functions(feature_records, namespaces=None, modules=None,
-                 constructor_prefix='mk_func__'):
+                 constructor_prefixes=['mk_func__']):
     """
     Create a return a list of feature functions based on the given
     feature records.
@@ -174,7 +174,7 @@ def mk_functions(feature_records, namespaces=None, modules=None,
         Passed to `mk_function`.
     modules:
         Passed to `mk_function`.
-    constructor_prefix:
+    constructor_prefixes:
         Passed to `mk_function`.
     """
     id_idx = header_nm2idx['id']
@@ -182,7 +182,7 @@ def mk_functions(feature_records, namespaces=None, modules=None,
     functions = []
     for feat_rec in feature_records:
         feat_func = mk_function(
-            feat_rec, func_idx, namespaces, modules, constructor_prefix)
+            feat_rec, func_idx, namespaces, modules, constructor_prefixes)
         if feat_func is None:
             raise ValueError(
                 'Feature {}: Failed to find / construct function: {!r}'
