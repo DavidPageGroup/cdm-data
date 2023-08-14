@@ -43,7 +43,7 @@ id|name|tbl|typ|val|data_type|feat_func|args
 ```
 """
 
-# Copyright (c) 2019, 2021 Aubrey Barnard.
+# Copyright (c) 2019, 2021, 2023 Aubrey Barnard.
 #
 # This is free, open software licensed under the [MIT License](
 # https://choosealicense.com/licenses/mit/).
@@ -370,10 +370,24 @@ def mk_func__has_event(feature_record, namespaces=None, modules=None):
     """
     _, _, ev_cat, ev_typ, _, data_type_name, _, _ = feature_record
     ret_type = nm2type[data_type_name]
-    def featfunc__count_events(example, event_sequence):
-        return ret_type(
-            event_sequence.has_type((ev_cat, ev_typ)))
-    return featfunc__count_events
+    def featfunc__has_event(example, event_sequence):
+        return ret_type(event_sequence.has_type((ev_cat, ev_typ)))
+    return featfunc__has_event
+
+
+def mk_func__n_events(feature_record, namespaces=None, modules=None):
+    """
+    Create and return a feature function that counts how many events are
+    in an event sequence.
+
+    The (tbl, typ) pair of the feature record is the event type.  The
+    count is converted to the indicated data type.
+    """
+    _, _, ev_cat, ev_typ, _, data_type_name, _, _ = feature_record
+    ret_type = nm2type[data_type_name]
+    def featfunc__n_events(example, event_sequence):
+        return ret_type(event_sequence.n_events())
+    return featfunc__n_events
 
 
 def mk_func__count_events(
@@ -391,6 +405,21 @@ def mk_func__count_events(
         return ret_type(
             event_sequence.n_events_of_type((ev_cat, ev_typ)))
     return featfunc__count_events
+
+
+def mk_func__proportion_events(
+        feature_record, namespaces=None, modules=None):
+    """
+    Create and return a feature function that is essentially
+    'count_events(...) / n_events(...)'.
+    """
+    _, _, ev_cat, ev_typ, _, data_type_name, _, _ = feature_record
+    ret_type = nm2type[data_type_name]
+    def featfunc__proportion_events(example, event_sequence):
+        n_typ = event_sequence.n_events_of_type((ev_cat, ev_typ))
+        n_evs = event_sequence.n_events()
+        return ret_type(n_typ / n_evs if n_evs > 0 else 0)
+    return featfunc__proportion_events
 
 
 def mk_func__count_events_matching(
@@ -432,6 +461,29 @@ def mk_func__count_events_matching(
             1 for ev in event_sequence.events((ev_cat, ev_typ))
             if get_value(ev) in vals))
     return featfunc__count_events_matching
+
+
+def mk_func__proportion_events_matching(
+        feature_record, namespaces=None, modules=None):
+    """
+    Create and return a feature function that is essentially
+    'count_events_matching(...) / n_events(...)'.
+    """
+    _, _, ev_cat, ev_typ, ev_vals, data_type_name, _, args = feature_record
+    ret_type = nm2type[data_type_name]
+    delimiter = get_option(args, 0, 'delimiter', ',')
+    get_value = get_option(args, 1, 'get_value')
+    get_value = (core.lookup(get_value, namespaces, modules)
+                 if isinstance(get_value, str)
+                 else operator.attrgetter('value'))
+    # Handle multiple values
+    vals = set(ev_vals.split(delimiter))
+    def featfunc__proportion_events_matching(example, event_sequence):
+        n_mat = sum(1 for ev in event_sequence.events((ev_cat, ev_typ))
+                    if get_value(ev) in vals)
+        n_evs = event_sequence.n_events()
+        return ret_type(n_mat / n_evs if n_evs > 0 else 0)
+    return featfunc__proportion_events_matching
 
 
 # Feature vectors

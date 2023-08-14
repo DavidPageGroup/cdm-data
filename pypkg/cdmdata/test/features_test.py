@@ -1,6 +1,6 @@
 """Tests `features.py`"""
 
-# Copyright (c) 2019, 2021 Aubrey Barnard.
+# Copyright (c) 2019, 2021, 2023 Aubrey Barnard.
 #
 # This is free, open software licensed under the [MIT License](
 # https://choosealicense.com/licenses/mit/).
@@ -60,6 +60,7 @@ class FunctionTest(unittest.TestCase):
             ],
             id=808186755,
         )
+        self.ev_seq_empty = esal.EventSequence([])
 
     def test_func__event_sequence_id(self):
         feat_rec = [67420, '_attr-id', '_attr', 'id', None,
@@ -106,6 +107,7 @@ class FunctionTest(unittest.TestCase):
                 feat_func = features.mk_function(feat_recs[idx])
                 self.assertEqual(
                     expecteds[idx], feat_func(None, self.ev_seq))
+                self.assertEqual(0, feat_func(None, self.ev_seq_empty))
 
     def test_func__has_event(self):
         feat_recs = [
@@ -120,6 +122,14 @@ class FunctionTest(unittest.TestCase):
                 feat_func = features.mk_function(feat_recs[idx])
                 self.assertEqual(
                     expecteds[idx], feat_func(None, self.ev_seq))
+                self.assertEqual(0, feat_func(None, self.ev_seq_empty))
+
+    def test_func__n_events(self):
+        feat_rec = [65211, '_attr-n_events', '_attr', 'n_events', None,
+                    'int', 'n_events', None]
+        feat_func = features.mk_function(feat_rec)
+        self.assertEqual(28, feat_func(None, self.ev_seq))
+        self.assertEqual(0, feat_func(None, self.ev_seq_empty))
 
     def test_func__count_events(self):
         feat_recs = [
@@ -134,6 +144,26 @@ class FunctionTest(unittest.TestCase):
                 feat_func = features.mk_function(feat_recs[idx])
                 self.assertEqual(
                     expecteds[idx], feat_func(None, self.ev_seq))
+                self.assertEqual(0, feat_func(None, self.ev_seq_empty))
+
+    def test_func__proportion_events(self):
+        feat_recs = [
+            [92761, 'dx-2', 'dx', '2', None,
+             'float', 'proportion_events', None],
+            [98708, 'px-3', 'px', '3', None,
+             'float', 'proportion_events', None],
+            [30096, 'rx-0', 'rx', '0', None,
+             'float', 'proportion_events', None],
+            [38894, 'vx-2', 'vx', '2', None,
+             'float', 'proportion_events', None],
+        ]
+        n_evs = self.ev_seq.n_events()
+        expecteds = [n / n_evs for n in [2, 1, 2, 0]]
+        for (feat_rec, exp) in zip(feat_recs, expecteds):
+            with self.subTest(feat_rec[1]):
+                feat_func = features.mk_function(feat_rec)
+                self.assertEqual(exp, feat_func(None, self.ev_seq))
+                self.assertEqual(0.0, feat_func(None, self.ev_seq_empty))
 
     def test_func__count_events_matching(self):
         feat_recs = [
@@ -158,3 +188,29 @@ class FunctionTest(unittest.TestCase):
                     feat_recs[idx], namespaces=[locals()])
                 self.assertEqual(
                     expecteds[idx], feat_func(None, self.ev_seq))
+                self.assertEqual(0, feat_func(None, self.ev_seq_empty))
+
+    def test_func__proportion_events_matching(self):
+        feat_recs = [
+            [63963, 'mx-4-hi', 'mx', '4', 'hi', 'float',
+             'proportion_events_matching', dict(get_value='ev_val_0')],
+            [63964, 'mx-4-lo', 'mx', '4', 'lo', 'float',
+             'proportion_events_matching', dict(get_value='ev_val_0')],
+            [63965, 'mx-4-ok', 'mx', '4', 'ok', 'float',
+             'proportion_events_matching', dict(get_value='ev_val_0')],
+            [26224, 'mx-8-any', 'mx', '8', 'lo,ok,hi', 'float',
+             'proportion_events_matching', dict(get_value='ev_val_0')],
+            [26225, 'mx-8-abn', 'mx', '8', 'lo;hi;ab', 'float',
+             'proportion_events_matching',
+             dict(delimiter=';', get_value='ev_val_0')],
+        ]
+        def ev_val_0(ev):
+            return ev.value[0]
+        n_evs = self.ev_seq.n_events()
+        expecteds = [n / n_evs for n in [1, 1, 0, 2, 1]]
+        for (feat_rec, exp) in zip(feat_recs, expecteds):
+            with self.subTest(feat_rec[1]):
+                feat_func = features.mk_function(
+                    feat_rec, namespaces=[locals()])
+                self.assertEqual(exp, feat_func(None, self.ev_seq))
+                self.assertEqual(0.0, feat_func(None, self.ev_seq_empty))
