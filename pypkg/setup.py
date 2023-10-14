@@ -1,6 +1,6 @@
 """Package definition and install configuration for `cdmdata`"""
 
-# Copyright (c) 2019 Aubrey Barnard.
+# Copyright (c) 2019, 2023 Aubrey Barnard.
 #
 # This is free, open software licensed under the [MIT License](
 # https://choosealicense.com/licenses/mit/).
@@ -53,7 +53,7 @@ setuptools.setup(
     # Requirements
     python_requires='~= 3.4',
     install_requires=[
-        'esal ~= 0.4.0',
+        'esal ~= 0.4',
     ],
 
     # API
