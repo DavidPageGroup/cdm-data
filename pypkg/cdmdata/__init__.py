@@ -2,7 +2,7 @@
 Python package for working with events and data in Common Data Model
 format.
 
-Copyright (c) 2019, 2021 Aubrey Barnard.
+Copyright (c) 2019, 2021, 2023 Aubrey Barnard.
 
 This is free, open software licensed under the [MIT License](
 https://choosealicense.com/licenses/mit/).
@@ -13,4 +13,4 @@ https://choosealicense.com/licenses/mit/).
 
 
 # Version
-__version__ = '0.3.0'
+__version__ = '0.3.1'
